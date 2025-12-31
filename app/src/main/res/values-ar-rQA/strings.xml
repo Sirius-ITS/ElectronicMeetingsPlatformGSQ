@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ElectronicMeetingsPlatform</string>
+
+    <!-- Phone number component -->
+    <string name="country_code">الكود</string>
+    <string name="select_country_code">حدد رمز البلد</string>
+    <string name="enter_phone_number">أدخل رقم الهاتف</string>
+
+    <!-- OTP component -->
+    <string name="phone_number">رقم التليفون</string>
+    <string name="didnt_receive_OTP">لم تستلم الرسالة؟ أعد إرسال رمز التحقق لمرة واحدة</string>
+
+    <!--  Inspection Dialog  -->
+    <string name="ok">موافق</string>
+
+    <!--  Common UI  -->
+    <string name="loading">تحميل</string>
+    <string name="retry">إعادة المحاولة</string>
+
+    <!-- Custom toolbar -->
+    <string name="home">الرئيسية</string>
+    <string name="profile">الملف الشخصي</string>
+    <string name="notification">التنبيهات</string>
+
+    <!--  Custom file upload  -->
+    <string name="view_file">عرض</string>
+    <string name="replace_file">إستبدال</string>
+    <string name="delete_file">حذف</string>
+    <string name="choose_file">إختر ملف</string>
+    <string name="file_format_info">ملفات بصيغة PDF أو JPG أو PNG فقط. الحد الأقصى لحجم الملف 5 ميجابايت.</string>
+
+</resources>

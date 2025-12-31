@@ -1,0 +1,15 @@
+package com.informatique.electronicmeetingsplatform.common
+
+/**
+ * Centralized error handling for the application
+ */
+sealed class AppError {
+    data class Network(val message: String) : AppError()
+    data class Validation(val fieldErrors: Map<String, String>) : AppError()
+    data class FileUpload(val message: String) : AppError()
+    data class CompanyLookup(val message: String) : AppError()
+    data class Submission(val message: String) : AppError()
+    data class Initialization(val message: String) : AppError() // For transaction initialization errors
+    data class ApiError(val code: Int, val message: String) : AppError() // ✅ NEW: For API errors (including 406)
+    data class Unknown(val message: String) : AppError()
+}
