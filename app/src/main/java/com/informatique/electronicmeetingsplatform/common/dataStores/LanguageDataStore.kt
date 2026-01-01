@@ -24,7 +24,7 @@ class LanguageDataStore @Inject constructor(
     }
 
     val languageFlow: Flow<String> = context.dataStore.data.map { prefs ->
-        prefs[LANGUAGE_KEY] ?: "en"
+        prefs[LANGUAGE_KEY] ?: "ar"
     }
 
     suspend fun saveLanguage(langCode: String) {
