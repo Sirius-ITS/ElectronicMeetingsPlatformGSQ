@@ -133,6 +133,10 @@ dependencies {
     implementation(libs.navigation.ui)
     implementation(libs.navigation.compose)
 
+    // --- Calenders ---
+    implementation(libs.kizitonwose.calendar)
+    implementation(libs.hijri.calendar)
+
     // --- Tests ---
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

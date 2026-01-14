@@ -1,19 +1,31 @@
 package com.informatique.electronicmeetingsplatform.navigation
 
-import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.informatique.electronicmeetingsplatform.ui.screens.HomeScreen
 import com.informatique.electronicmeetingsplatform.ui.screens.LoginScreen
+import com.informatique.electronicmeetingsplatform.ui.screens.MainScreen
 import com.informatique.electronicmeetingsplatform.ui.viewModel.ThemeViewModel
 
+/**
+ * Main NavHost for top-level navigation
+ * Handles navigation between Login and Main screens
+ */
 @Composable
-fun NavHost(themeViewModel: ThemeViewModel){
+fun NavHost(
+    themeViewModel: ThemeViewModel,
+    onNavControllerReady: ((NavHostController) -> Unit)? = null
+) {
 
     val navController = rememberNavController()
+
+    // Notify MainActivity when navController is ready
+    LaunchedEffect(navController) {
+        onNavControllerReady?.invoke(navController)
+    }
 
     NavHost(
         navController = navController,
@@ -24,9 +36,10 @@ fun NavHost(themeViewModel: ThemeViewModel){
             LoginScreen(navController = navController)
         }
 
-        composable(NavRoutes.HomeRoute.route) {
-            HomeScreen(navController = navController)
+        composable(NavRoutes.MainRoute.route) {
+            MainScreen()
         }
-    }
 
+    }
 }
+

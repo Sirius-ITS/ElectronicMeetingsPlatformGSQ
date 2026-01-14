@@ -8,6 +8,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import android.content.Context
+import com.informatique.electronicmeetingsplatform.data.datastorehelper.TokenManager
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
 import io.ktor.client.network.sockets.ConnectTimeoutException
@@ -24,6 +25,7 @@ import io.ktor.client.request.header
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import javax.inject.Singleton
 import java.security.SecureRandom
@@ -93,18 +95,19 @@ class NetworkModule {
             defaultRequest {
                 url(environment.baseUrl)
 //                header("X-API-Key", environment.apiKey)
-                header("X-Client-Version", "BuildConfig.VERSION_NAME")
+//                header("X-Client-Version", "BuildConfig.VERSION_NAME")
                 header("X-Platform", "Android")
 
                 // ✅ Dynamic OAuth token from TokenManager as Bearer token
-//                val token = runBlocking {
-//                    TokenManager.getAccessToken(context)
-//                }
+                val token = runBlocking {
+                    TokenManager.getAccessToken(context)
+                }
 
-//                if (!token.isNullOrEmpty()) {
-//                    // ✅ Use OAuth token as Bearer token (industry standard)
-//                    header("Authorization", "Bearer $token")
-//                } else {
+                if (!token.isNullOrEmpty()) {
+                    // ✅ Use OAuth token as Bearer token (industry standard)
+                    header("Authorization", "Bearer $token")
+                }
+//                else {
 //                    // ✅ Fallback to legacy X-Auth-Token header with hardcoded token
 ////                    header("X-Auth-Token", "ZWMxNjZjMTEtZTQwZS00OGE5LWJmMzYtZDkwNDA1ZWU5ZDdh")
 //                }

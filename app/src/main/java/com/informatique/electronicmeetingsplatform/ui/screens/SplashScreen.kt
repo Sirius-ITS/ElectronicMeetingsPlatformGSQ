@@ -15,26 +15,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import com.informatique.electronicmeetingsplatform.R
 import com.informatique.electronicmeetingsplatform.ui.theme.AppFontFamily
-
-private val MaroonColor = Color(0xFF7D1F3F)
-private val BlueColor = Color(0xFF0D4261)
-private val TextGray = Color(0xFFABABAB)
+import com.informatique.electronicmeetingsplatform.ui.theme.LocalExtraColors
 
 @Composable
 fun SplashScreen(
     onSplashComplete: () -> Unit
 ) {
+
+    val extraColors = LocalExtraColors.current
+
     // Animation states
     var startAnimation by remember { mutableStateOf(false) }
 
@@ -147,7 +144,7 @@ fun SplashScreen(
             Image(
                 painter = painterResource(id = R.drawable.ic_logo),
                 contentDescription = "Qatar Council Emblem",
-                colorFilter = ColorFilter.tint(MaroonColor),
+                colorFilter = ColorFilter.tint(extraColors.maroonColor),
                 modifier = Modifier
                     .size(90.dp)
                     .scale(logoScale)
@@ -164,7 +161,7 @@ fun SplashScreen(
                     text = "الأمانــــة العامـــــة لمجلــــس الـــوزراء",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaroonColor,
+                    color = extraColors.maroonColor,
                     letterSpacing = 0.5.sp,
                     modifier = Modifier
                         .alpha(textAlpha)
@@ -175,7 +172,7 @@ fun SplashScreen(
                     text = "Council of Ministers Secretariat General",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
-                    color = MaroonColor,
+                    color = extraColors.maroonColor,
                     letterSpacing = 0.3.sp,
                     modifier = Modifier
                         .alpha(textAlpha)
@@ -186,7 +183,7 @@ fun SplashScreen(
                     text = "دولــــة قطـــر • State of Qatar",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    color = MaroonColor,
+                    color = extraColors.maroonColor,
                     letterSpacing = 0.2.sp,
                     modifier = Modifier
                         .alpha(textAlpha)
@@ -202,7 +199,7 @@ fun SplashScreen(
                 fontFamily = AppFontFamily,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Medium,
-                color = BlueColor,
+                color = extraColors.blueColor,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .alpha(textAlpha)
@@ -218,7 +215,7 @@ fun SplashScreen(
                 fontFamily = AppFontFamily,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Normal,
-                color = TextGray,
+                color = extraColors.textGray,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .alpha(textAlpha)
@@ -235,9 +232,9 @@ fun SplashScreen(
                 .alpha(textAlpha),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            LoadingDot(scale = dotScale3, color = MaroonColor)
-            LoadingDot(scale = dotScale2, color = MaroonColor.copy(alpha = 0.6f))
-            LoadingDot(scale = dotScale1, color = MaroonColor. copy(alpha = 0.4f))
+            LoadingDot(scale = dotScale3, color = extraColors.maroonColor)
+            LoadingDot(scale = dotScale2, color = extraColors.maroonColor.copy(alpha = 0.6f))
+            LoadingDot(scale = dotScale1, color = extraColors.maroonColor. copy(alpha = 0.4f))
         }
     }
 }

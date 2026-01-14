@@ -14,9 +14,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.LinearProgressIndicator
@@ -40,12 +38,7 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.informatique.electronicmeetingsplatform.ui.theme.AppFontFamily
 import com.informatique.electronicmeetingsplatform.ui.theme.AppTheme
-import com.informatique.electronicmeetingsplatform.ui.theme.White
-
-private val MaroonColor = Color(0xFF7D1F3F)
-private val BlueColor = Color(0xFF0D4261)
-
-private val TextGray = Color(0xFFABABAB)
+import com.informatique.electronicmeetingsplatform.ui.theme.LocalExtraColors
 
 @Composable
 fun HomeScreen(navController: NavController) {
@@ -58,8 +51,7 @@ fun HomeScreen(navController: NavController) {
     }
 
     Scaffold(
-        containerColor = Color(0xFFF5F5F5),
-        bottomBar = { BottomNavigationBar() }
+        containerColor = Color(0xFFF5F5F5)
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -116,7 +108,7 @@ fun HomeScreen(navController: NavController) {
                 ) {
                     Column(verticalArrangement = Arrangement. spacedBy(16.dp)) {
                         CreateNewMeetingCard()
-                        PreviousMeetingsCard()
+                        //PreviousMeetingsCard()
                         ServicesSection()
                     }
                 }
@@ -128,6 +120,9 @@ fun HomeScreen(navController: NavController) {
 
 @Composable
 fun TopHeaderSection() {
+
+    val extraColors = LocalExtraColors.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -141,7 +136,7 @@ fun TopHeaderSection() {
             modifier = Modifier
                 .size(50.dp)
                 .clip(CircleShape)
-                .border(2.dp, BlueColor, CircleShape),
+                .border(2.dp, extraColors.blueColor, CircleShape),
             contentScale = ContentScale.Crop
         )
 
@@ -157,7 +152,7 @@ fun TopHeaderSection() {
                 fontFamily = AppFontFamily,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
-                color = BlueColor
+                color = extraColors.blueColor
             )
             Text(
                 text = "الأربعاء، 31 ديسمبر 2025",
@@ -178,7 +173,7 @@ fun TopHeaderSection() {
                     modifier = Modifier
                         .size(32.dp)
                         .clickable { },
-                    tint = MaroonColor
+                    tint = extraColors.maroonColor
                 )
             }
 
@@ -189,7 +184,7 @@ fun TopHeaderSection() {
                     modifier = Modifier
                         .size(32.dp)
                         .clickable { },
-                    tint = MaroonColor
+                    tint = extraColors.maroonColor
                 )
                 Badge(
                     modifier = Modifier
@@ -238,6 +233,9 @@ fun TopStatisticsCardsExpanded() {
 
 @Composable
 fun TopStatisticsCards() {
+
+    val extraColors = LocalExtraColors.current
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -246,7 +244,7 @@ fun TopStatisticsCards() {
             number = "12",
             label = "إجمالي الإجتماعات",
             icon = Icons.Default.DateRange,
-            iconColor = BlueColor,
+            iconColor = extraColors.blueColor,
             modifier = Modifier.weight(1f)
         )
         StatCard(
@@ -260,7 +258,7 @@ fun TopStatisticsCards() {
             number = "5",
             label = "إجتماعات عاجلة",
             icon = Icons.Default.AccessTimeFilled,
-            iconColor = MaroonColor,
+            iconColor = extraColors.maroonColor,
             modifier = Modifier.weight(1f)
         )
     }
@@ -330,6 +328,9 @@ fun ExpandedStatCard(
     iconColor: Color,
     modifier: Modifier = Modifier
 ) {
+
+    val extraColors = LocalExtraColors.current
+
     Card(
         modifier = modifier.wrapContentHeight(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -363,7 +364,7 @@ fun ExpandedStatCard(
                 text = label,
                 fontFamily = AppFontFamily,
                 fontSize = 13.sp,
-                color = BlueColor,
+                color = extraColors.blueColor,
                 textAlign = TextAlign.Center
             )
 
@@ -372,7 +373,7 @@ fun ExpandedStatCard(
                 fontFamily = AppFontFamily,
                 fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
-                color = BlueColor
+                color = extraColors.blueColor
             )
         }
     }
@@ -383,6 +384,9 @@ fun WeeklyMeetingCard(
     isExpanded: Boolean,
     onExpandChange: (Boolean) -> Unit
 ) {
+
+    val extraColors = LocalExtraColors.current
+
     val rotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
         animationSpec = spring(
@@ -400,7 +404,7 @@ fun WeeklyMeetingCard(
                     stiffness = Spring.StiffnessLow
                 )
             ),
-        colors = CardDefaults.cardColors(containerColor = MaroonColor),
+        colors = CardDefaults.cardColors(containerColor = extraColors.maroonColor),
         shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -655,7 +659,7 @@ fun AttendanceProgressBar(percentage: Int) {
             Spacer(modifier = Modifier.height(8.dp))
 
             LinearProgressIndicator(
-                progress = percentage / 100f,
+                progress = { percentage / 100f },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp)
@@ -678,6 +682,9 @@ fun AttendeeItem(
     status: AttendanceStatus,
     imageUrl: String
 ) {
+
+    val extraColors = LocalExtraColors.current
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -723,7 +730,7 @@ fun AttendeeItem(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
                                 .size(20.dp)
-                                .background(MaroonColor, CircleShape)
+                                .background(extraColors.maroonColor, CircleShape)
                                 .padding(2.dp)
                         )
                     }
@@ -775,6 +782,9 @@ fun AttendeeItem(
 
 @Composable
 fun CreateNewMeetingCard() {
+
+    val extraColors = LocalExtraColors.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -799,7 +809,7 @@ fun CreateNewMeetingCard() {
                 Icon(
                     imageVector = Icons.Default.AddCircleOutline,
                     contentDescription = null,
-                    tint = MaroonColor,
+                    tint = extraColors.maroonColor,
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -815,7 +825,7 @@ fun CreateNewMeetingCard() {
                     fontFamily = AppFontFamily,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = BlueColor
+                    color = extraColors.blueColor
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -831,15 +841,18 @@ fun CreateNewMeetingCard() {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = MaroonColor,
+                tint = extraColors.maroonColor,
                 modifier = Modifier.size(24.dp)
             )
         }
     }
 }
 
-@Composable
+/*@Composable
 fun PreviousMeetingsCard() {
+
+    val extraColors = LocalExtraColors.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -865,7 +878,7 @@ fun PreviousMeetingsCard() {
                 Icon(
                     imageVector = Icons.Default.CalendarMonth,
                     contentDescription = null,
-                    tint = MaroonColor,
+                    tint = extraColors.maroonColor,
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -881,7 +894,7 @@ fun PreviousMeetingsCard() {
                     fontFamily = AppFontFamily,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = BlueColor
+                    color = extraColors.blueColor
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -895,15 +908,18 @@ fun PreviousMeetingsCard() {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = MaroonColor,
+                tint = extraColors.maroonColor,
                 modifier = Modifier.size(24.dp)
             )
         }
     }
-}
+}*/
 
 @Composable
 fun ServicesSection() {
+
+    val extraColors = LocalExtraColors.current
+
     Column {
         Row(
             modifier = Modifier. fillMaxWidth(),
@@ -913,7 +929,7 @@ fun ServicesSection() {
             Icon(
                 imageVector = Icons.Default.GridView,
                 contentDescription = null,
-                tint = MaroonColor,
+                tint = extraColors.maroonColor,
                 modifier = Modifier.size(28.dp)
             )
 
@@ -922,7 +938,7 @@ fun ServicesSection() {
                 fontFamily = AppFontFamily,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = BlueColor
+                color = extraColors.blueColor
             )
         }
 
@@ -943,21 +959,23 @@ fun ServicesSection() {
 
 data class ServiceItem(
     val title: String,
-    val icon: ImageVector,
-    val iconColor: Color
+    val icon: ImageVector
 )
 
 val servicesItems = listOf(
-    ServiceItem("طلب شهادة", Icons.Default.Edit, MaroonColor),
-    ServiceItem("حافظة المستندات الرقمية", Icons.Default. Folder, MaroonColor),
-    ServiceItem("دليل التواصل", Icons.Default. Menu, MaroonColor),
-    ServiceItem("إحتساب نهاية الخدمة", Icons.Default.Person, MaroonColor),
-    ServiceItem("الراتب الشهري", Icons.Default.AccountBox, MaroonColor),
-    ServiceItem("بدل تعليم", Icons.Default.School, MaroonColor)
+    ServiceItem("طلب شهادة", Icons.Default.Edit),
+    ServiceItem("حافظة المستندات الرقمية", Icons.Default.Folder),
+    ServiceItem("دليل التواصل", Icons.Default. Menu),
+    ServiceItem("إحتساب نهاية الخدمة", Icons.Default.Person),
+    ServiceItem("الراتب الشهري", Icons.Default.AccountBox),
+    ServiceItem("بدل تعليم", Icons.Default.School)
 )
 
 @Composable
 fun ServiceCard(service: ServiceItem) {
+
+    val extraColors = LocalExtraColors.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -977,13 +995,13 @@ fun ServiceCard(service: ServiceItem) {
             Box(
                 modifier = Modifier
                     .size(50.dp)
-                    .background(service.iconColor.copy(alpha = 0.1f), CircleShape),
+                    .background(extraColors.maroonColor.copy(alpha = 0.1f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = service.icon,
                     contentDescription = null,
-                    tint = service.iconColor,
+                    tint = extraColors.maroonColor,
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -993,7 +1011,7 @@ fun ServiceCard(service: ServiceItem) {
                 fontFamily = AppFontFamily,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
-                color = BlueColor,
+                color = extraColors.blueColor,
                 textAlign = TextAlign.Center,
                 maxLines = 2
             )
@@ -1001,62 +1019,6 @@ fun ServiceCard(service: ServiceItem) {
     }
 }
 
-@Composable
-fun BottomNavigationBar() {
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults. cardElevation(defaultElevation = 8.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp, horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BottomNavItem("الرئيسية", Icons.Default.Home, true)
-            BottomNavItem("التقويم", Icons.Default.DateRange, false)
-            BottomNavItem("طلباتي", Icons.Default.FileOpen, false)
-            BottomNavItem("طلبات الاعتماد", Icons.Default.CheckCircle, false)
-            BottomNavItem("الملف الشخصي", Icons.Default.Person, false)
-        }
-    }
-}
-
-@Composable
-fun BottomNavItem(label: String, icon: ImageVector, isSelected: Boolean) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.clickable { }
-    ) {
-        Box(
-            modifier = Modifier
-                .background(
-                    if (isSelected) MaroonColor else Color.Transparent,
-                    RoundedCornerShape(12.dp)
-                )
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            contentAlignment = Alignment. Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = if (isSelected) Color.White else Color.Gray,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-        Text(
-            text = label,
-            fontFamily = AppFontFamily,
-            fontSize = 10.sp,
-            color = if (isSelected) MaroonColor else Color.Gray,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-        )
-    }
-}
 
 @Preview(showBackground = true)
 @Composable

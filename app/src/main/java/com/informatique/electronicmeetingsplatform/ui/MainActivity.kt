@@ -4,9 +4,12 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,10 +18,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.informatique.electronicmeetingsplatform.common.util.LocalAppLocale
+import com.informatique.electronicmeetingsplatform.data.session.SessionManager
 import com.informatique.electronicmeetingsplatform.navigation.NavHost
 import com.informatique.electronicmeetingsplatform.ui.base.BaseActivity
+import com.informatique.electronicmeetingsplatform.ui.components.SessionExpiredDialog
 import com.informatique.electronicmeetingsplatform.ui.screens.SplashScreen
 import com.informatique.electronicmeetingsplatform.ui.theme.AppTheme
 import com.informatique.electronicmeetingsplatform.ui.theme.ThemeOption
@@ -30,6 +35,9 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : BaseActivity() {
+
+    @Inject
+    lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +66,18 @@ class MainActivity : BaseActivity() {
             val currentLocale = Locale(lang)
             val themeOption by themeViewModel.theme.collectAsState(initial = ThemeOption.SYSTEM_DEFAULT)
 
+            // Monitor session expiration globally
+            val isSessionExpired by sessionManager.sessionExpired.collectAsState()
+            var showSessionDialog by remember { mutableStateOf(false) }
+            var navHostReference by remember { mutableStateOf<androidx.navigation.NavHostController?>(null) }
+
+            // Show dialog when session expires
+            LaunchedEffect(isSessionExpired) {
+                if (isSessionExpired) {
+                    showSessionDialog = true
+                }
+            }
+
             CompositionLocalProvider(
                 LocalLayoutDirection provides
                         if (lang == "ar") LayoutDirection.Rtl else LayoutDirection.Ltr,
@@ -68,7 +88,9 @@ class MainActivity : BaseActivity() {
                     var showSplash by remember { mutableStateOf(true) }
 
                     Surface(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize()
+                            .statusBarsPadding()
+                            .navigationBarsPadding(),
                         color = MaterialTheme.colorScheme.background
                     ) {
                         if (showSplash) {
@@ -79,7 +101,24 @@ class MainActivity : BaseActivity() {
                             )
                         } else {
                             NavHost(
-                                themeViewModel = themeViewModel
+                                themeViewModel = themeViewModel,
+                                onNavControllerReady = { navController ->
+                                    navHostReference = navController
+                                }
+                            )
+                        }
+
+                        // Show session expired dialog overlay
+                        if (showSessionDialog) {
+                            SessionExpiredDialog(
+                                onRenew = {
+                                    showSessionDialog = false
+                                    sessionManager.resetSessionExpired()
+                                    // Navigate to login screen
+                                    navHostReference?.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
                             )
                         }
                     }
