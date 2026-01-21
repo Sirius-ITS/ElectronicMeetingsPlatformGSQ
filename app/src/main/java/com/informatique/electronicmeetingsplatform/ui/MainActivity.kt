@@ -3,6 +3,7 @@ package com.informatique.electronicmeetingsplatform.ui
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -23,7 +24,10 @@ import com.informatique.electronicmeetingsplatform.common.util.LocalAppLocale
 import com.informatique.electronicmeetingsplatform.data.session.SessionManager
 import com.informatique.electronicmeetingsplatform.navigation.NavHost
 import com.informatique.electronicmeetingsplatform.ui.base.BaseActivity
-import com.informatique.electronicmeetingsplatform.ui.components.SessionExpiredDialog
+import com.informatique.electronicmeetingsplatform.ui.components.popup.AlertPopupHost
+import com.informatique.electronicmeetingsplatform.ui.components.popup.AlertPopupManager
+import com.informatique.electronicmeetingsplatform.ui.components.popup.DialogHost
+import com.informatique.electronicmeetingsplatform.ui.components.popup.SessionExpiredDialog
 import com.informatique.electronicmeetingsplatform.ui.screens.SplashScreen
 import com.informatique.electronicmeetingsplatform.ui.theme.AppTheme
 import com.informatique.electronicmeetingsplatform.ui.theme.ThemeOption
@@ -38,6 +42,9 @@ class MainActivity : BaseActivity() {
 
     @Inject
     lateinit var sessionManager: SessionManager
+
+    @Inject
+    lateinit var alertPopupManager: AlertPopupManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,33 +100,41 @@ class MainActivity : BaseActivity() {
                             .navigationBarsPadding(),
                         color = MaterialTheme.colorScheme.background
                     ) {
-                        if (showSplash) {
-                            SplashScreen(
-                                onSplashComplete = {
-                                    showSplash = false
-                                }
-                            )
-                        } else {
-                            NavHost(
-                                themeViewModel = themeViewModel,
-                                onNavControllerReady = { navController ->
-                                    navHostReference = navController
-                                }
-                            )
-                        }
-
-                        // Show session expired dialog overlay
-                        if (showSessionDialog) {
-                            SessionExpiredDialog(
-                                onRenew = {
-                                    showSessionDialog = false
-                                    sessionManager.resetSessionExpired()
-                                    // Navigate to login screen
-                                    navHostReference?.navigate("login") {
-                                        popUpTo(0) { inclusive = true }
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            if (showSplash) {
+                                SplashScreen(
+                                    onSplashComplete = {
+                                        showSplash = false
                                     }
-                                }
-                            )
+                                )
+                            } else {
+                                NavHost(
+                                    themeViewModel = themeViewModel,
+                                    onNavControllerReady = { navController ->
+                                        navHostReference = navController
+                                    }
+                                )
+                            }
+
+                            // Show session expired dialog overlay
+                            if (showSessionDialog) {
+                                SessionExpiredDialog(
+                                    onRenew = {
+                                        showSessionDialog = false
+                                        sessionManager.resetSessionExpired()
+                                        // Navigate to login screen
+                                        navHostReference?.navigate("login") {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                    }
+                                )
+                            }
+
+                            // Global dialog host for confirmation dialogs
+                            DialogHost(dialogManager = alertPopupManager.getDialogManager())
+
+                            // Global alert popup host for toast notifications
+                            AlertPopupHost(alertPopupManager = alertPopupManager)
                         }
                     }
                 }

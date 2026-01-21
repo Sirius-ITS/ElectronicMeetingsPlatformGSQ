@@ -1,4 +1,4 @@
-package com.informatique.electronicmeetingsplatform.ui.components
+package com.informatique.electronicmeetingsplatform.ui.components.popup
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -75,4 +75,3 @@ fun AlertType.getConfig(): AlertTypeConfig {
         )
     }
 }
-

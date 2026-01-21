@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.informatique.electronicmeetingsplatform.data.model.meeting.statistics.NextOfficialMeeting
 import com.informatique.electronicmeetingsplatform.ui.theme.AppFontFamily
 import com.informatique.electronicmeetingsplatform.ui.theme.AppTheme
 import com.informatique.electronicmeetingsplatform.ui.theme.ExtraColors
@@ -146,12 +147,13 @@ fun CalendarScreen(navController: NavController) {
                             )
                         }
 
-                        item {
-                            WeeklyMeetingCard(
-                                isExpanded = isMeetingExpanded,
-                                onExpandChange = { isMeetingExpanded = it }
-                            )
-                        }
+//                        item {
+//                            WeeklyMeetingCard(
+//
+//                                isExpanded = isMeetingExpanded,
+//                                onExpandChange = { isMeetingExpanded = it }
+//                            )
+//                        }
 
                         items(
                             items = organizedMeetings,
