@@ -34,7 +34,7 @@ import javax.inject.Inject
  * Manages authentication state and user interactions
  */
 @HiltViewModel
-class MeetingViewModel @Inject constructor(
+class CreateMeetingViewModel @Inject constructor(
     private val meetingTypesUseCase: MeetingTypesUseCase,
     private val meetingPrioritiesUseCase: MeetingPrioritiesUseCase,
     private val meetingInviteesUseCase: MeetingInviteesUseCase,

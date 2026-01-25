@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class RejectionReason(
-    val refuseReason: String?,
-    val refuseReasonEn: String?,
-    val refuseReasonId: Int?
+    val refuseReason: String? = null,
+    val refuseReasonEn: String? = null,
+    val refuseReasonId: Int? = null
 )

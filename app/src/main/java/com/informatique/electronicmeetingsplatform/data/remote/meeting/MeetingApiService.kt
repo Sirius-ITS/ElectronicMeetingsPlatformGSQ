@@ -1,5 +1,7 @@
 package com.informatique.electronicmeetingsplatform.data.remote.meeting
 
+import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.AllMeetingDetailResponse
+import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.AllMeetingResponse
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.AttachmentRequest
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.AttachmentResponse
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.DeleteAttachmentRequest
@@ -35,6 +37,10 @@ interface MeetingApiService {
     suspend fun deleteAttachment(request: DeleteAttachmentRequest): ApiResponse<DeleteAttachmentResponse>
 
     suspend fun createMeeting(request: CreateMeetingRequest): ApiResponse<CreateMeetingResponse>
+
+    suspend fun allMeetings(): ApiResponse<AllMeetingResponse>
+
+    suspend fun allMeetingDetail(meetingId: Int): ApiResponse<AllMeetingDetailResponse>
 
 }
 

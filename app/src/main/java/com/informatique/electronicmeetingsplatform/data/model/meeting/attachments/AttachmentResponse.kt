@@ -1,6 +1,7 @@
 package com.informatique.electronicmeetingsplatform.data.model.meeting.attachments
 
 import kotlinx.serialization.Serializable
+import java.util.Locale
 
 @Serializable
 data class AttachmentResponse(
@@ -22,10 +23,10 @@ data class AttachmentResponse(
     fun getFormattedFileSize(): String {
         val sizeInKB = fileSize / 1024.0
         return if (sizeInKB < 1024) {
-            String.format("%.2f KB", sizeInKB)
+            String.format(Locale.ENGLISH, "%.2f KB", sizeInKB)
         } else {
             val sizeInMB = sizeInKB / 1024.0
-            String.format("%.2f MB", sizeInMB)
+            String.format(Locale.ENGLISH, "%.2f MB", sizeInMB)
         }
     }
 

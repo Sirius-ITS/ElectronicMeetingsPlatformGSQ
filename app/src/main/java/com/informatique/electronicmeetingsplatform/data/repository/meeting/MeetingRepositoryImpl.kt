@@ -1,5 +1,7 @@
 package com.informatique.electronicmeetingsplatform.data.repository.meeting
 
+import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.AllMeetingDetailResponse
+import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.AllMeetingResponse
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.AttachmentRequest
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.AttachmentResponse
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.DeleteAttachmentRequest
@@ -133,6 +135,40 @@ class MeetingRepositoryImpl @Inject constructor(
         // Check for session expiration
         checkSessionExpiration(response)
 
+        when (response) {
+            is ApiResponse.Success -> {}
+            else -> { /* No action needed */ }
+        }
+
+        emit(response)
+    }
+
+    override suspend fun allMeetings(): Flow<ApiResponse<AllMeetingResponse>> = flow {
+        emit(ApiResponse.Loading)
+
+        val response = meetingApiService.allMeetings()
+
+        // Check for session expiration
+        checkSessionExpiration(response)
+
+        // If login successful, save tokens
+        when (response) {
+            is ApiResponse.Success -> {}
+            else -> { /* No action needed */ }
+        }
+
+        emit(response)
+    }
+
+    override suspend fun allMeetingDetail(meetingId: Int): Flow<ApiResponse<AllMeetingDetailResponse>> = flow {
+        emit(ApiResponse.Loading)
+
+        val response = meetingApiService.allMeetingDetail(meetingId)
+
+        // Check for session expiration
+        checkSessionExpiration(response)
+
+        // If login successful, save tokens
         when (response) {
             is ApiResponse.Success -> {}
             else -> { /* No action needed */ }

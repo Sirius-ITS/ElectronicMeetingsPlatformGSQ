@@ -1,5 +1,7 @@
 package com.informatique.electronicmeetingsplatform.data.repository.meeting
 
+import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.AllMeetingDetailResponse
+import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.AllMeetingResponse
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.AttachmentRequest
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.AttachmentResponse
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.DeleteAttachmentRequest
@@ -32,6 +34,10 @@ interface MeetingRepository {
     suspend fun deleteAttachment(request: DeleteAttachmentRequest): Flow<ApiResponse<DeleteAttachmentResponse>>
 
     suspend fun createMeeting(request: CreateMeetingRequest): Flow<ApiResponse<CreateMeetingResponse>>
+
+    suspend fun allMeetings(): Flow<ApiResponse<AllMeetingResponse>>
+
+    suspend fun allMeetingDetail(meetingId: Int): Flow<ApiResponse<AllMeetingDetailResponse>>
 
 
 }

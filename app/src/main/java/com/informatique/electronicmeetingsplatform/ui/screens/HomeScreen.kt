@@ -107,7 +107,14 @@ fun HomeScreen(navController: NavController) {
                     enter = expandVertically() + fadeIn(),
                     exit = shrinkVertically() + fadeOut()
                 ) {
-                    TopStatisticsCards(statisticState = statisticState)
+                    TopStatisticsCards(
+                        statisticState = statisticState,
+                        onTotalMeetingsClicked = {
+                            navController.navigate(NavRoutes.AllMeetingRoute.route)
+                        },
+                        onCompletedMeetingsClicked = {},
+                        onUrgentMeetingsClicked = {}
+                    )
                 }
             }
 
@@ -265,7 +272,12 @@ fun TopStatisticsCardsExpanded(statisticState: StatisticState) {
 }
 
 @Composable
-fun TopStatisticsCards(statisticState: StatisticState) {
+fun TopStatisticsCards(
+    statisticState: StatisticState,
+    onTotalMeetingsClicked: () -> Unit = {},
+    onCompletedMeetingsClicked: () -> Unit = {},
+    onUrgentMeetingsClicked: () -> Unit = {}
+) {
 
     val extraColors = LocalExtraColors.current
 
@@ -280,7 +292,8 @@ fun TopStatisticsCards(statisticState: StatisticState) {
             label = "إجمالي الإجتماعات",
             icon = Icons.Default.DateRange,
             iconColor = extraColors.blueColor,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            onClick = onTotalMeetingsClicked
         )
         StatCard(
             isLoading = (statisticState is StatisticState.Loading),
@@ -288,7 +301,8 @@ fun TopStatisticsCards(statisticState: StatisticState) {
             label = "طلبات مكتملة",
             icon = Icons.Default.CheckCircle,
             iconColor = Color(0xFF4CAF50),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            onClick = onCompletedMeetingsClicked
         )
         StatCard(
             isLoading = (statisticState is StatisticState.Loading),
@@ -297,7 +311,8 @@ fun TopStatisticsCards(statisticState: StatisticState) {
             label = "إجتماعات عاجلة",
             icon = Icons.Default.AccessTimeFilled,
             iconColor = extraColors.maroonColor,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            onClick = onUrgentMeetingsClicked
         )
     }
 }
@@ -309,13 +324,15 @@ fun StatCard(
     label: String,
     icon: ImageVector,
     iconColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Card(
         modifier = modifier.wrapContentHeight(),
-        colors = CardDefaults. cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults. cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier

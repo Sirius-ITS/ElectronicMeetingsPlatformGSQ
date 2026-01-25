@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,9 +48,9 @@ import com.informatique.electronicmeetingsplatform.ui.theme.AppTheme
 import com.informatique.electronicmeetingsplatform.ui.theme.LocalExtraColors
 import com.informatique.electronicmeetingsplatform.ui.viewModel.AttachmentState
 import com.informatique.electronicmeetingsplatform.ui.viewModel.CreateMeetingState
+import com.informatique.electronicmeetingsplatform.ui.viewModel.CreateMeetingViewModel
 import com.informatique.electronicmeetingsplatform.ui.viewModel.DeleteAttachmentState
 import com.informatique.electronicmeetingsplatform.ui.viewModel.InviteeState
-import com.informatique.electronicmeetingsplatform.ui.viewModel.MeetingViewModel
 import com.informatique.electronicmeetingsplatform.ui.viewModel.PriorityState
 import com.informatique.electronicmeetingsplatform.ui.viewModel.TypeState
 import com.informatique.electronicmeetingsplatform.util.emailValidator
@@ -66,7 +67,7 @@ fun CreateMeetingScreen(navController: NavController) {
 
     val extraColors = LocalExtraColors.current
 
-    val viewModel = hiltViewModel<MeetingViewModel>()
+    val viewModel = hiltViewModel<CreateMeetingViewModel>()
     val meetingTypeState = viewModel.typeState.collectAsStateWithLifecycle()
     val uploadAttachmentState = viewModel.attachmentState.collectAsStateWithLifecycle()
     val deleteAttachmentState = viewModel.deleteAttachmentState.collectAsStateWithLifecycle()
@@ -94,8 +95,6 @@ fun CreateMeetingScreen(navController: NavController) {
     var isStartTime by remember { mutableStateOf(true) }
 
     var storagePermissionGranted by remember { mutableStateOf(false) }
-
-    val scrollState = rememberScrollState()
 
     // determine storage permission based on Android version
     val storagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -168,7 +167,6 @@ fun CreateMeetingScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(paddingValues)
                 .background(extraColors.background)
-                .verticalScroll(scrollState)
                 .padding(horizontal = 16.dp)
         ) {
             Row(
@@ -202,338 +200,373 @@ fun CreateMeetingScreen(navController: NavController) {
                 }
             }
 
-            // Meeting Title Card
-            MeetingCard {
-                Column {
-                    Text(
-                        text = "عنوان الاجتماع",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = extraColors.blueColor
-                    )
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = meetingTitle,
-                        onValueChange = { viewModel.updateTopic(it) },
-                        placeholder = {
+                // Meeting Title Card
+                item {
+                    MeetingCard {
+                        Column {
                             Text(
-                            "ادخل عنوان الاجتماع",
-                                fontSize = 14.sp
+                                text = "عنوان الاجتماع",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = extraColors.blueColor
                             )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedContainerColor = extraColors.background,
-                            focusedContainerColor = extraColors.background,
-                            focusedBorderColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent
-                        )
-                    )
-                }
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
-            // Meeting Type Card
-            MeetingCard {
-                Column {
-                    Text(
-                        text = "نوع الاجتماع",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp,
-                        color = extraColors.blueColor
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Box {
-                        OutlinedTextField(
-                            value = selectedMeetingType?.name ?: "",
-                            onValueChange = {},
-                            readOnly = true,
-                            enabled = false,
-                            placeholder = {
-                                Column {
+                            OutlinedTextField(
+                                value = meetingTitle,
+                                onValueChange = { viewModel.updateTopic(it) },
+                                placeholder = {
                                     Text(
-                                        "اختر نوع الاجتماع",
+                                        "ادخل عنوان الاجتماع",
                                         fontSize = 14.sp
                                     )
-                                    Text(
-                                        "اضغط للإختيار",
-                                        fontSize = 12.sp
-                                    )
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { showMeetingTypeDropdown = !showMeetingTypeDropdown },
-                            shape = RoundedCornerShape(12.dp),
-                            trailingIcon = {
-                                if (meetingTypeState.value is TypeState.Loading){
-                                    CircularProgressIndicator(
-                                        color = extraColors.maroonColor
-                                    )
-                                }
-                                else if (meetingTypeState.value is TypeState.Success) {
-                                    Icon(
-                                        imageVector = if (showMeetingTypeDropdown)
-                                            Icons.Default.KeyboardArrowUp
-                                        else
-                                            Icons.Default.KeyboardArrowDown,
-                                        contentDescription = null
-                                    )
-                                }
-                            },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                disabledContainerColor = extraColors.background,
-                                unfocusedContainerColor = extraColors.background,
-                                focusedContainerColor = extraColors.background,
-                                disabledBorderColor = extraColors.background,
-                                unfocusedBorderColor = Color.Transparent,
-                                focusedBorderColor = extraColors.blueColor
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    unfocusedContainerColor = extraColors.background,
+                                    focusedContainerColor = extraColors.background,
+                                    focusedBorderColor = Color.Transparent,
+                                    unfocusedBorderColor = Color.Transparent
+                                )
                             )
-                        )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
-                    AnimatedVisibility(
-                        visible = showMeetingTypeDropdown,
-                        enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
-                        exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
-                    ) {
-                        MeetingCard(
-                            elevation = 2,
-                        ){
-                            Column(
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                if (meetingTypeState.value is TypeState.Success) {
-                                    val types = (meetingTypeState.value as TypeState.Success).data
-                                    types.forEachIndexed { index,  type ->
-                                        OfficialMeetingToggle(
-                                            type = type,
-                                            selectedType = selectedMeetingType,
-                                            onToggle = { viewModel.updateMeetingTypeId(it) }
-                                        )
+                // Meeting Type Card
+                item {
+                    MeetingCard {
+                        Column {
+                            Text(
+                                text = "نوع الاجتماع",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = extraColors.blueColor
+                            )
 
-                                        if (index < types.lastIndex) {
-                                            HorizontalDivider(
-                                                modifier = Modifier.padding(vertical = 4.dp),
-                                                thickness = 1.dp,
-                                                color = extraColors.background
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Box {
+                                OutlinedTextField(
+                                    value = selectedMeetingType?.name ?: "",
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    enabled = false,
+                                    placeholder = {
+                                        Column {
+                                            Text(
+                                                "اختر نوع الاجتماع",
+                                                fontSize = 14.sp
                                             )
+                                            Text(
+                                                "اضغط للإختيار",
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            showMeetingTypeDropdown = !showMeetingTypeDropdown
+                                        },
+                                    shape = RoundedCornerShape(12.dp),
+                                    trailingIcon = {
+                                        if (meetingTypeState.value is TypeState.Loading) {
+                                            CircularProgressIndicator(
+                                                color = extraColors.maroonColor
+                                            )
+                                        } else if (meetingTypeState.value is TypeState.Success) {
+                                            Icon(
+                                                imageVector = if (showMeetingTypeDropdown)
+                                                    Icons.Default.KeyboardArrowUp
+                                                else
+                                                    Icons.Default.KeyboardArrowDown,
+                                                contentDescription = null
+                                            )
+                                        }
+                                    },
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        disabledContainerColor = extraColors.background,
+                                        unfocusedContainerColor = extraColors.background,
+                                        focusedContainerColor = extraColors.background,
+                                        disabledBorderColor = extraColors.background,
+                                        unfocusedBorderColor = Color.Transparent,
+                                        focusedBorderColor = extraColors.blueColor
+                                    )
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            AnimatedVisibility(
+                                visible = showMeetingTypeDropdown,
+                                enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                                exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                            ) {
+                                MeetingCard(
+                                    elevation = 2,
+                                ) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        if (meetingTypeState.value is TypeState.Success) {
+                                            val types =
+                                                (meetingTypeState.value as TypeState.Success).data
+                                            types.forEachIndexed { index, type ->
+                                                OfficialMeetingToggle(
+                                                    type = type,
+                                                    selectedType = selectedMeetingType,
+                                                    onToggle = { viewModel.updateMeetingTypeId(it) }
+                                                )
+
+                                                if (index < types.lastIndex) {
+                                                    HorizontalDivider(
+                                                        modifier = Modifier.padding(vertical = 4.dp),
+                                                        thickness = 1.dp,
+                                                        color = extraColors.background
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Time Period Card
-            MeetingCard {
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = null,
-                            tint = extraColors.maroonColor
-                        )
-                        Text(
-                            text = "الفترة الزمنية",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp,
-                            color = extraColors.blueColor
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        DateTimeCard(
-                            modifier = Modifier
-                                .weight(1f)
-                                .then(
-                                    if (isStartTime && showDateTimePicker) {
-                                        Modifier.border(
-                                            width = 1.dp,
-                                            color = extraColors.maroonColor,
-                                            shape = RoundedCornerShape(12.dp)
-                                        )
-                                    } else {
-                                        Modifier.border(width = 0.dp, color = Color.Transparent)
-                                    }
-                                ),
-                            label = "يبدأ",
-                            date = startDate,
-                            time = startTime,
-                            onClick = {
-                                isStartTime = true
-                                showDateTimePicker = true
+                // Time Period Card
+                item {
+                    MeetingCard {
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DateRange,
+                                    contentDescription = null,
+                                    tint = extraColors.maroonColor
+                                )
+                                Text(
+                                    text = "الفترة الزمنية",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp,
+                                    color = extraColors.blueColor
+                                )
                             }
-                        )
-                        
-                        DateTimeCard(
-                            modifier = Modifier
-                                .weight(1f)
-                                .then(
-                                    if (!isStartTime && showDateTimePicker) {
-                                        Modifier.border(
-                                            width = 1.dp,
-                                            color = extraColors.maroonColor,
-                                            shape = RoundedCornerShape(12.dp)
-                                        )
-                                    } else {
-                                        Modifier.border(width = 0.dp, color = Color.Transparent)
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                DateTimeCard(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .then(
+                                            if (isStartTime && showDateTimePicker) {
+                                                Modifier.border(
+                                                    width = 1.dp,
+                                                    color = extraColors.maroonColor,
+                                                    shape = RoundedCornerShape(12.dp)
+                                                )
+                                            } else {
+                                                Modifier.border(
+                                                    width = 0.dp,
+                                                    color = Color.Transparent
+                                                )
+                                            }
+                                        ),
+                                    label = "يبدأ",
+                                    date = startDate,
+                                    time = startTime,
+                                    onClick = {
+                                        isStartTime = true
+                                        showDateTimePicker = true
                                     }
-                                ),
-                            label = "ينتهي",
-                            date = if (!isStartTime && startDate.isAfter(endDate)) startDate else endDate,
-                            time = endTime,
-                            onClick = {
-                                isStartTime = false
-                                showDateTimePicker = true
+                                )
+
+                                DateTimeCard(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .then(
+                                            if (!isStartTime && showDateTimePicker) {
+                                                Modifier.border(
+                                                    width = 1.dp,
+                                                    color = extraColors.maroonColor,
+                                                    shape = RoundedCornerShape(12.dp)
+                                                )
+                                            } else {
+                                                Modifier.border(
+                                                    width = 0.dp,
+                                                    color = Color.Transparent
+                                                )
+                                            }
+                                        ),
+                                    label = "ينتهي",
+                                    date = if (!isStartTime && startDate.isAfter(endDate)) startDate else endDate,
+                                    time = endTime,
+                                    onClick = {
+                                        isStartTime = false
+                                        showDateTimePicker = true
+                                    }
+                                )
                             }
-                        )
-                    }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
-                    AnimatedVisibility(
-                        visible = showDateTimePicker,
-                        enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
-                        exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
-                    ) {
-                        DateTimePicker(
-                            selectedDate = if (!isStartTime && startDate.isAfter(endDate)) startDate
-                            else if (isStartTime) startDate else endDate,
-                            selectedTime = if (isStartTime) startTime else endTime,
-                            minDate = if (!isStartTime) startDate else null,
-                            minTime = if (!isStartTime && endDate == startDate) startTime else null,
-                            onDateSelected = {
-                                if (isStartTime) {
-                                    startDate = it
-                                    // Auto-adjust end date if needed
-                                    if (endDate.isBefore(it)) {
-                                        endDate = it
-                                    }
-                                } else {
-                                    endDate = it
-                                }
-                            },
-                            onTimeChanged = {
-                                if (isStartTime) {
-                                    startTime = it// Auto-adjust end time if same day
-                                    if (endDate == startDate && endTime.isBefore(it)) {
-                                        endTime = it.plusHours(1)
-                                    }
-                                } else {
-                                    endTime = it
-                                }
-                            },
-                            onDismiss = { showDateTimePicker = false }
-                        )
-                    }
+                            AnimatedVisibility(
+                                visible = showDateTimePicker,
+                                enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                                exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                            ) {
+                                DateTimePicker(
+                                    selectedDate = if (!isStartTime && startDate.isAfter(endDate)) startDate
+                                    else if (isStartTime) startDate else endDate,
+                                    selectedTime = if (isStartTime) startTime else endTime,
+                                    minDate = if (!isStartTime) startDate else null,
+                                    minTime = if (!isStartTime && endDate == startDate) startTime else null,
+                                    onDateSelected = {
+                                        if (isStartTime) {
+                                            startDate = it
+                                            // Auto-adjust end date if needed
+                                            if (endDate.isBefore(it)) {
+                                                endDate = it
+                                            }
+                                        } else {
+                                            endDate = it
+                                        }
+                                    },
+                                    onTimeChanged = {
+                                        if (isStartTime) {
+                                            startTime = it// Auto-adjust end time if same day
+                                            if (endDate == startDate && endTime.isBefore(it)) {
+                                                endTime = it.plusHours(1)
+                                            }
+                                        } else {
+                                            endTime = it
+                                        }
+                                    },
+                                    onDismiss = { showDateTimePicker = false }
+                                )
+                            }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
-                    DurationDisplay(duration = meetingDuration)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Recurring Meeting Card
-            MeetingCard {
-                RecurringMeetingToggle(
-                    isEnabled = isRecurring,
-                    onToggle = { isRecurring = it },
-                    selectedRecurringType = recurringType,
-                    onRecurringSelected = { recurringType = it }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Invitees Card
-            MeetingCard {
-                InviteesSection(
-                    viewModel = viewModel,
-                    onConfirm = { invitees -> viewModel.updateAttendees(invitees) }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Priority Level Card
-            MeetingCard {
-                PrioritySelector(
-                    viewModel = viewModel,
-                    selectedPriority = priorityLevel,
-                    selectedColor = priorityLevelColor,
-                    onPrioritySelected = { priority, color ->
-                        viewModel.updateMeetingPriorityId(priority)
-                        priorityLevelColor = color
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // External Invitees Card
-            MeetingCard {
-                ExternalInviteeSection(
-                    onExternalInviteeAdd = { externalAttendees = it },
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Attachments Card
-            MeetingCard {
-                FileManagerSection(
-                    viewModel = viewModel,
-                    selectedAttachments = uploadedAttachments,
-                    onAddNewFile = {
-                        if (storagePermissionGranted) {
-                            imageLauncher.launch("*/*")
-                        } else {
-                            storagePermissionLauncher.launch(storagePermission)
+                            DurationDisplay(duration = meetingDuration)
                         }
-                    },
-                    onRemoveFile = { fileName ->
-                        viewModel.onDeleteAttachment(fileName)
                     }
-                )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // Recurring Meeting Card
+                item {
+                    MeetingCard {
+                        RecurringMeetingToggle(
+                            isEnabled = isRecurring,
+                            onToggle = { isRecurring = it },
+                            selectedRecurringType = recurringType,
+                            onRecurringSelected = { recurringType = it }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // Invitees Card
+                item {
+                    MeetingCard {
+                        InviteesSection(
+                            viewModel = viewModel,
+                            onConfirm = { invitees -> viewModel.updateAttendees(invitees) }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // Priority Level Card
+                item {
+                    MeetingCard {
+                        PrioritySelector(
+                            viewModel = viewModel,
+                            selectedPriority = priorityLevel,
+                            selectedColor = priorityLevelColor,
+                            onPrioritySelected = { priority, color ->
+                                viewModel.updateMeetingPriorityId(priority)
+                                priorityLevelColor = color
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // External Invitees Card
+                item {
+                    MeetingCard {
+                        ExternalInviteeSection(
+                            onExternalInviteeAdd = { externalAttendees = it },
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // Attachments Card
+                item {
+                    MeetingCard {
+                        FileManagerSection(
+                            viewModel = viewModel,
+                            selectedAttachments = uploadedAttachments,
+                            onAddNewFile = {
+                                if (storagePermissionGranted) {
+                                    imageLauncher.launch("*/*")
+                                } else {
+                                    storagePermissionLauncher.launch(storagePermission)
+                                }
+                            },
+                            onRemoveFile = { fileName ->
+                                viewModel.onDeleteAttachment(fileName)
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // Additional Details Card
+                item {
+                    MeetingCard {
+                        AdditionalDetailsSection(
+                            location = location,
+                            onLocationChange = { viewModel.updateLocation(it) },
+                            notes = notes,
+                            onNotesChange = { notes = it }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Additional Details Card
-            MeetingCard {
-                AdditionalDetailsSection(
-                    location = location,
-                    onLocationChange = { viewModel.updateLocation(it) },
-                    notes = notes,
-                    onNotesChange = { notes = it }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             // Bottom Buttons
             Row(
@@ -888,7 +921,7 @@ fun RecurringButton(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InviteesSection(
-    viewModel: MeetingViewModel,
+    viewModel: CreateMeetingViewModel,
     onConfirm: (List<Attendee>) -> Unit
 ) {
 
@@ -1131,7 +1164,7 @@ fun SelectedInviteeCard(
 
 @Composable
 fun PrioritySelector(
-    viewModel: MeetingViewModel,
+    viewModel: CreateMeetingViewModel,
     selectedPriority: priorityData?,
     selectedColor: Color?,
     onPrioritySelected: (priorityData, Color) -> Unit
@@ -1458,7 +1491,7 @@ fun ExternalInviteeSection(
 
 @Composable
 fun FileManagerSection(
-    viewModel: MeetingViewModel,
+    viewModel: CreateMeetingViewModel,
     selectedAttachments: List<AttachmentResponse>,
     onAddNewFile: () -> Unit,
     onRemoveFile: (String) -> Unit
