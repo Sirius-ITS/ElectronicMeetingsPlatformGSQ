@@ -13,6 +13,7 @@ import com.informatique.electronicmeetingsplatform.ui.screens.CreateMeetingScree
 import com.informatique.electronicmeetingsplatform.ui.screens.LoginScreen
 import com.informatique.electronicmeetingsplatform.ui.screens.MainScreen
 import com.informatique.electronicmeetingsplatform.ui.screens.meetings.AllMeetingScreen
+import com.informatique.electronicmeetingsplatform.ui.screens.meetings.EditRespondScreen
 import com.informatique.electronicmeetingsplatform.ui.screens.meetings.MeetingDetailScreen
 import com.informatique.electronicmeetingsplatform.ui.screens.meetings.MeetingsType
 import com.informatique.electronicmeetingsplatform.ui.viewModel.MeetingsViewModel
@@ -81,6 +82,23 @@ fun NavHost(
         ) { backStackEntry ->
             val meetingId = backStackEntry.arguments?.getString("meetingId") ?: ""
             MeetingDetailScreen(
+                viewModel = meetingsViewModel,
+                navController = navController,
+                meetingId = meetingId
+            )
+        }
+
+        composable(
+            route = NavRoutes.EditRespondRoute.route,
+            arguments = listOf(
+                navArgument("meetingId") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) { backStackEntry ->
+            val meetingId = backStackEntry.arguments?.getString("meetingId") ?: ""
+            EditRespondScreen(
                 viewModel = meetingsViewModel,
                 navController = navController,
                 meetingId = meetingId

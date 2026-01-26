@@ -39,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.Attendee
 import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.Meeting
+import com.informatique.electronicmeetingsplatform.navigation.NavRoutes
 import com.informatique.electronicmeetingsplatform.ui.components.MeetingCard
 import com.informatique.electronicmeetingsplatform.ui.theme.AppTheme
 import com.informatique.electronicmeetingsplatform.ui.theme.LocalExtraColors
@@ -175,6 +176,7 @@ fun MeetingDetailScreen(viewModel: MeetingsViewModel, navController: NavControll
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // Add to calender btn
+                    // show it if the user is not organizer and the status is accepted
                     if (detail.isOrganizer == false && detail.myStatus == "Accepted") {
                         Button(
                             modifier = Modifier
@@ -216,6 +218,8 @@ fun MeetingDetailScreen(viewModel: MeetingsViewModel, navController: NavControll
                         }
                     }
 
+                    // Accept btn
+                    // show it if the user is not organizer and the status is pending
                     if (detail.isOrganizer == false && detail.myStatus == "Pending") {
                         Button(
                             onClick = {
@@ -253,6 +257,8 @@ fun MeetingDetailScreen(viewModel: MeetingsViewModel, navController: NavControll
                         }
                     }
 
+                    // Refuse btn
+                    // show it if the user is not organizer and the status is pending
                     if (detail.isOrganizer == false && detail.myStatus == "Pending") {
                         Button(
                             onClick = {
@@ -290,16 +296,15 @@ fun MeetingDetailScreen(viewModel: MeetingsViewModel, navController: NavControll
                         }
                     }
 
+                    // Edit respond btn
+                    // show it if the user is not organizer and the status is refused
+                    // or accepted and canApologyAfterAccept is true
                     if (detail.isOrganizer == false && (detail.myStatus == "Refused"
                                 || (detail.myStatus == "Accepted" && detail.canApologyAfterAccept == true))) {
                         Button(
                             onClick = {
-                                viewModel.respondMeeting(
-                                    meetingId = meetingId.toInt(),
-                                    response = "apology",
-                                    reasonId = 0,
-                                    otherReason = ""
-                                )
+                                navController.navigate(
+                                    NavRoutes.EditRespondRoute.createRoute(meetingId))
                             },
                             modifier = Modifier
                                 .weight(1f)

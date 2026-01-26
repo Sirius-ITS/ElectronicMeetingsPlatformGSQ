@@ -19,4 +19,8 @@ sealed class NavRoutes(val route: String) {
         fun createRoute(meetingId: String) = "meeting-detail/${Uri.encode(meetingId)}"
     }
 
+    data object EditRespondRoute : NavRoutes("edit-respond/{meetingId}"){
+        fun createRoute(meetingId: String) = "edit-respond/${Uri.encode(meetingId)}"
+    }
+
 }
