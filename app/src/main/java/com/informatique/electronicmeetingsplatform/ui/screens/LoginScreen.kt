@@ -46,7 +46,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.informatique.electronicmeetingsplatform.R
 import com.informatique.electronicmeetingsplatform.navigation.NavRoutes
-import com.informatique.electronicmeetingsplatform.ui.components.rememberAlertPopupState
 import com.informatique.electronicmeetingsplatform.ui.theme.AppFontFamily
 import com.informatique.electronicmeetingsplatform.ui.theme.AppTheme
 import com.informatique.electronicmeetingsplatform.ui.theme.LocalExtraColors
@@ -70,7 +69,6 @@ fun LoginScreen(navController: NavController) {
     val loginState by viewModel.loginState.collectAsStateWithLifecycle()
 
     val focusManager = LocalFocusManager.current
-    val alertState = rememberAlertPopupState()
 
     Box(
         modifier = Modifier
@@ -137,10 +135,10 @@ fun LoginScreen(navController: NavController) {
                     popUpTo(NavRoutes.LoginRoute.route) { inclusive = true }
                 }
             } else if (loginState is Error) {
-                alertState.showError(
-                    message = (loginState as Error).message,
-                    title = "Error"
-                )
+//                alertState.showError(
+//                    message = (loginState as Error).message,
+//                    title = "Error"
+//                )
                 viewModel.resetLoginState()
             }
         }
@@ -462,7 +460,10 @@ fun LoginCard(
             ) {
                 when (loginState) {
                     is Loading -> {
-                        CircularProgressIndicator(color = Color.White)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = Color.White
+                        )
                     }
 
                     is Success -> {

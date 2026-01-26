@@ -3,11 +3,16 @@ package com.informatique.electronicmeetingsplatform.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.informatique.electronicmeetingsplatform.ui.screens.CreateMeetingScreen
 import com.informatique.electronicmeetingsplatform.ui.screens.LoginScreen
 import com.informatique.electronicmeetingsplatform.ui.screens.MainScreen
+import com.informatique.electronicmeetingsplatform.ui.screens.meetings.AllMeetingScreen
+import com.informatique.electronicmeetingsplatform.ui.screens.meetings.MeetingDetailScreen
 import com.informatique.electronicmeetingsplatform.ui.viewModel.ThemeViewModel
 
 /**
@@ -37,7 +42,31 @@ fun NavHost(
         }
 
         composable(NavRoutes.MainRoute.route) {
-            MainScreen()
+            MainScreen(navController = navController)
+        }
+
+        composable(NavRoutes.CreateMeetingRoute.route) {
+            CreateMeetingScreen(navController = navController)
+        }
+
+        composable(NavRoutes.AllMeetingRoute.route) {
+            AllMeetingScreen(navController = navController)
+        }
+
+        composable(
+            route = NavRoutes.MeetingDetailRoute.route,
+            arguments = listOf(
+                navArgument("meetingId") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) { backStackEntry ->
+            val meetingId = backStackEntry.arguments?.getString("meetingId") ?: ""
+            MeetingDetailScreen(
+                navController = navController,
+                meetingId = meetingId
+            )
         }
 
     }

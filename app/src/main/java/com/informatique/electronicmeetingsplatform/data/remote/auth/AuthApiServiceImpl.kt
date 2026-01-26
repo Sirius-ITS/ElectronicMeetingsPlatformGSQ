@@ -1,5 +1,6 @@
 package com.informatique.electronicmeetingsplatform.data.remote.auth
 
+import android.net.http.HttpException
 import com.informatique.electronicmeetingsplatform.data.model.auth.LoginRequest
 import com.informatique.electronicmeetingsplatform.data.model.auth.LoginResponse
 import com.informatique.electronicmeetingsplatform.data.model.auth.LogoutRequest
@@ -19,6 +20,7 @@ import io.ktor.http.contentType
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import java.io.IOException
@@ -52,9 +54,26 @@ class AuthApiServiceImpl @Inject constructor(
     override suspend fun login(request: LoginRequest): ApiResponse<LoginResponse> {
         return when (val response = appRepository.onPost(LOGIN_ENDPOINT, request)) {
             is ApiResponse.Success -> {
-                ApiResponse.Success(
-                    json.decodeFromJsonElement(
-                        LoginResponse.serializer(), response.data))
+                return try {
+                    val loginResponse = json.decodeFromJsonElement(
+                        LoginResponse.serializer(), response.data)
+                    ApiResponse.Success(loginResponse)
+                } catch (e: SerializationException) {
+                    ApiResponse.Error(
+                        message = "Invalid response format: ${e.message}",
+                        code = -1
+                    )
+                } catch (e: HttpException) {
+                    ApiResponse.Error(
+                        message = "Server error: ${e.message}",
+                        code = -1
+                    )
+                } catch (e: Exception) {
+                    ApiResponse.Error(
+                        message = "UnHandled error: ${e.message}",
+                        code = -1
+                    )
+                }
             }
 
             else -> {
@@ -214,12 +233,29 @@ class AuthApiServiceImpl @Inject constructor(
     override suspend fun profile(): ApiResponse<ProfileResponse> {
         return when (val response = appRepository.onGet(PROFILE_ENDPOINT)) {
             is ApiResponse.Success -> {
-                ApiResponse.Success(
-                    json.decodeFromJsonElement(
-                        ProfileResponse.serializer(),
-                        response.data
+                return try {
+                    ApiResponse.Success(
+                        json.decodeFromJsonElement(
+                            ProfileResponse.serializer(),
+                            response.data
+                        )
                     )
-                )
+                } catch (e: SerializationException) {
+                    ApiResponse.Error(
+                        message = "Invalid response format: ${e.message}",
+                        code = -1
+                    )
+                } catch (e: HttpException) {
+                    ApiResponse.Error(
+                        message = "Server error: ${e.message}",
+                        code = -1
+                    )
+                } catch (e: Exception) {
+                    ApiResponse.Error(
+                        message = "UnHandled error: ${e.message}",
+                        code = -1
+                    )
+                }
             }
 
             else -> {

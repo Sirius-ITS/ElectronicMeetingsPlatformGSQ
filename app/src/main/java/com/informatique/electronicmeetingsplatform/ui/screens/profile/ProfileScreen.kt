@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
@@ -26,6 +25,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -121,10 +121,10 @@ fun ProfileScreen(navController: NavController) {
                         PersonalInformationSection(viewModel = viewModel)
                     }
                     ProfileTabType.SALARY -> {
-
+                        WagesAndCompensationSection(/*viewModel = viewModel*/)
                     }
                     else -> {
-
+                        AttendanceSection(viewModel = viewModel)
                     }
                 }
 
@@ -517,7 +517,10 @@ fun JobCardFront(
 }
 
 @Composable
-fun JobCardBack(data: Data, goBack: () -> Unit) {
+fun JobCardBack(
+    data: Data,
+    goBack: () -> Unit
+) {
 
     val extraColors = LocalExtraColors.current
     val scrollState = rememberScrollState()
@@ -583,6 +586,7 @@ fun JobCardBack(data: Data, goBack: () -> Unit) {
                 headerLabel = "جهة العمل",
                 data = AdditionalInformation(
                     Icons.Default.Cases,
+                    "القسم: ",
                     data.person.personDepartmentJobs[0].departmentName
                 )
             )
@@ -591,23 +595,29 @@ fun JobCardBack(data: Data, goBack: () -> Unit) {
                 headerIcon = Icons.Default.LocationOn,
                 headerLabel = "العنوان",
                 data = listOf(
-                    AdditionalInformation(Icons.Default.MyLocation, "835"),
-                    AdditionalInformation(Icons.Default.LocationOn, "120"),
-                    AdditionalInformation(Icons.Default.LocationCity, "قطر")
+                    AdditionalInformation(Icons.Default.MyLocation, "الشارع: ", "835"),
+                    AdditionalInformation(Icons.Default.LocationOn, "المنطقة: ","120"),
+                    AdditionalInformation(Icons.Default.LocationCity, "المدينة: ","قطر")
                 )
             )
 
-//            BackInfoItem(
-//                icon = Icons.Default.Home,
-//                label = "الشارع",
-//                value = "835"
-//            )
-//
-//            BackInfoItem(
-//                icon = Icons.Default.Place,
-//                label = "المنطقة",
-//                value = "منطقة"
-//            )
+            BackInfoItem(
+                headerIcon = Icons.Default.CreditCard,
+                headerLabel = "المعلومات البنكية",
+                data = listOf(
+                    AdditionalInformation(painterResource(R.drawable.ic_bank), "البنك: ", "بنك قطر الوطني"),
+                    AdditionalInformation(painterResource(R.drawable.ic_account_number), "رقم الحساب: ","120")
+                )
+            )
+
+            BackInfoItem(
+                headerIcon = painterResource(R.drawable.ic_identification),
+                headerLabel = "معلومات شخصية",
+                data = listOf(
+                    AdditionalInformation(Icons.Default.CalendarMonth, "تاريخ الميلاد: ", "12/12/1980"),
+                    AdditionalInformation(Icons.Default.Flag, "الجنسية: ","قطري")
+                )
+            )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -644,8 +654,9 @@ fun JobCardBack(data: Data, goBack: () -> Unit) {
 }
 
 data class AdditionalInformation (
-    val icon: ImageVector,
-    val label: String
+    val icon: Any,
+    val label: String,
+    val value: String
 )
 
 @Composable
@@ -710,14 +721,14 @@ fun BackInfoItem(
             ) {
                 Icon(
                     modifier = Modifier.size(12.dp),
-                    imageVector = data.icon,
+                    imageVector = data.icon as ImageVector,
                     contentDescription = data.label,
                     tint = Color.Black.copy(alpha = 0.5f)
                 )
             }
 
             Text(
-                text = data.label,
+                text = data.value,
                 color = Color.White.copy(alpha = 0.7f),
                 fontSize = 14.sp
             )
@@ -728,7 +739,7 @@ fun BackInfoItem(
 
 @Composable
 fun BackInfoItem(
-    headerIcon: ImageVector,
+    headerIcon: Any,
     headerLabel: String,
     data: List<AdditionalInformation>
 ) {
@@ -752,12 +763,24 @@ fun BackInfoItem(
                     .background(extraColors.maroonColor, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    modifier = Modifier.size(12.dp),
-                    imageVector = headerIcon,
-                    contentDescription = headerLabel,
-                    tint = Color.Black.copy(alpha = 0.5f)
-                )
+                when (headerIcon) {
+                    is ImageVector -> {
+                        Icon(
+                            modifier = Modifier.size(12.dp),
+                            imageVector = headerIcon,
+                            contentDescription = headerLabel,
+                            tint = Color.Black.copy(alpha = 0.5f)
+                        )
+                    }
+                    is Painter -> {
+                        Icon(
+                            modifier = Modifier.size(12.dp),
+                            painter = headerIcon,
+                            contentDescription = headerLabel,
+                            tint = Color.Black.copy(alpha = 0.5f)
+                        )
+                    }
+                }
             }
 
             Text(
@@ -780,26 +803,59 @@ fun BackInfoItem(
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            data.forEach {
-                Box(
-                    modifier = Modifier
-                        .size(20.dp)
-                        .background(extraColors.maroonColor, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        modifier = Modifier.size(12.dp),
-                        imageVector = it.icon,
-                        contentDescription = it.label,
-                        tint = Color.Black.copy(alpha = 0.5f)
+            data.forEachIndexed { index, it ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .background(extraColors.maroonColor, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        when (val icon = it.icon) {
+                            is ImageVector -> {
+                                Icon(
+                                    modifier = Modifier.size(12.dp),
+                                    imageVector = icon,
+                                    contentDescription = it.label,
+                                    tint = Color.Black.copy(alpha = 0.5f)
+                                )
+                            }
+                            is Painter -> {
+                                Icon(
+                                    modifier = Modifier.size(12.dp),
+                                    painter = icon,
+                                    contentDescription = it.label,
+                                    tint = Color.Black.copy(alpha = 0.5f)
+                                )
+                            }
+                        }
+                    }
+
+                    Text(
+                        text = it.label,
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 14.sp
+                    )
+
+                    Text(
+                        text = it.value,
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp
                     )
                 }
 
-                Text(
-                    text = it.label,
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 14.sp
-                )
+                if (index < data.lastIndex) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        thickness = 1.dp,
+                        color = Color.White.copy(alpha = 0.2f)
+                    )
+                }
             }
         }
 

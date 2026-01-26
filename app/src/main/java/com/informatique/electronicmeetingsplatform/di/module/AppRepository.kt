@@ -21,9 +21,13 @@ import java.io.IOException
 
 class AppRepository(val client: HttpClient) {
 
-    suspend fun onGet(url: String): ApiResponse<JsonElement> {
+    suspend fun onGet(url: String, headers: Map<String, String>? = null): ApiResponse<JsonElement> {
         return safeApiCall {
-            val response = client.get(url)
+            val response = client.get(url){
+                headers?.forEach { (key, value) ->
+                    this.headers.append(key, value)
+                }
+            }
             when (response.status.value) {
                 in 200..299 -> {
                     val response = response.body<JsonElement>()
@@ -49,9 +53,16 @@ class AppRepository(val client: HttpClient) {
         }
     }
 
-    suspend fun onPost(url: String, body: Any): ApiResponse<JsonElement> {
+    suspend fun onPost(
+        url: String,
+        body: Any,
+        headers: Map<String, String>? = null
+    ): ApiResponse<JsonElement> {
         return safeApiCall {
             val response = client.post(url) {
+                headers?.forEach { (key, value) ->
+                    this.headers.append(key, value)
+                }
                 contentType(ContentType.Application.Json)
                 setBody(body)
             }
@@ -81,10 +92,17 @@ class AppRepository(val client: HttpClient) {
     }
 
     // New: JSON-specific POST that sets Content-Type: application/json
-    suspend fun onPostAuthJson(url: String, jsonBody: String): ApiResponse<JsonElement> {
+    suspend fun onPostAuthJson(
+        url: String,
+        jsonBody: String,
+        headers: Map<String, String>? = null
+    ): ApiResponse<JsonElement> {
         return safeApiCall {
             val response = client.post(url) {
                 contentType(ContentType.Application.Json)
+                headers?.forEach { (key, value) ->
+                    this.headers.append(key, value)
+                }
                 setBody(jsonBody)
             }
             when (response.status.value) {
@@ -112,9 +130,18 @@ class AppRepository(val client: HttpClient) {
         }
     }
 
-    suspend fun onPutAuth(url: String, body: Any): ApiResponse<JsonElement> {
+    suspend fun onPutAuth(
+        url: String,
+        body: Any,
+        headers: Map<String, String>? = null
+    ): ApiResponse<JsonElement> {
         return safeApiCall {
-            val response = client.put(url) { setBody(body) }
+            val response = client.put(url) {
+                headers?.forEach { (key, value) ->
+                    this.headers.append(key, value)
+                }
+                setBody(body)
+            }
             when (response.status.value) {
                 in 200..299 -> {
                     val response = response.body<JsonElement>()
@@ -140,9 +167,17 @@ class AppRepository(val client: HttpClient) {
         }
     }
 
-    suspend fun onPostMultipart(url: String, data: List<PartData>): ApiResponse<JsonElement> {
+    suspend fun onPostMultipart(
+        url: String,
+        data: List<PartData>,
+        headers: Map<String, String>? = null
+    ): ApiResponse<JsonElement> {
         return safeApiCall {
-            val response = client.submitFormWithBinaryData(url = url, data)
+            val response = client.submitFormWithBinaryData(url = url, data){
+                headers?.forEach { (key, value) ->
+                    this.headers.append(key, value)
+                }
+            }
             when (response.status.value) {
                 in 200..299 -> {
                     val response = response.body<JsonElement>()

@@ -26,22 +26,40 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit. LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
+import com.informatique.electronicmeetingsplatform.data.model.meeting.statistics.Attendee
+import com.informatique.electronicmeetingsplatform.data.model.meeting.statistics.NextOfficialMeeting
+import com.informatique.electronicmeetingsplatform.navigation.NavRoutes
 import com.informatique.electronicmeetingsplatform.ui.theme.AppFontFamily
 import com.informatique.electronicmeetingsplatform.ui.theme.AppTheme
 import com.informatique.electronicmeetingsplatform.ui.theme.LocalExtraColors
+import com.informatique.electronicmeetingsplatform.ui.viewModel.HomeViewModel
+import com.informatique.electronicmeetingsplatform.ui.viewModel.StatisticState
+import com.informatique.electronicmeetingsplatform.R
 
 @Composable
 fun HomeScreen(navController: NavController) {
+
+    val extraColors = LocalExtraColors.current
+
+    val viewModel = hiltViewModel<HomeViewModel>()
+
+    val statisticState by viewModel.statisticState.collectAsStateWithLifecycle()
 
     var isMeetingExpanded by remember { mutableStateOf(false) }
     var showTopCards by remember { mutableStateOf(false) }
@@ -51,7 +69,7 @@ fun HomeScreen(navController: NavController) {
     }
 
     Scaffold(
-        containerColor = Color(0xFFF5F5F5)
+        containerColor = extraColors.background
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -63,7 +81,7 @@ fun HomeScreen(navController: NavController) {
             item { TopHeaderSection() }
 
             item {
-                TopStatisticsCardsExpanded()
+                TopStatisticsCardsExpanded(statisticState = statisticState)
 //                AnimatedVisibility(
 //                    visible = showTopCards && isMeetingExpanded,
 //                    enter = expandVertically(
@@ -89,15 +107,28 @@ fun HomeScreen(navController: NavController) {
                     enter = expandVertically() + fadeIn(),
                     exit = shrinkVertically() + fadeOut()
                 ) {
-                    TopStatisticsCards()
+                    TopStatisticsCards(
+                        statisticState = statisticState,
+                        onTotalMeetingsClicked = {
+                            navController.navigate(NavRoutes.AllMeetingRoute.route)
+                        },
+                        onCompletedMeetingsClicked = {},
+                        onUrgentMeetingsClicked = {}
+                    )
                 }
             }
 
-            item {
-                WeeklyMeetingCard(
-                    isExpanded = isMeetingExpanded,
-                    onExpandChange = { isMeetingExpanded = it }
-                )
+            if (statisticState is StatisticState.Success) {
+                if ((statisticState as StatisticState.Success).data.nextOfficialMeeting != null) {
+                    item {
+                        WeeklyMeetingCard(
+                            viewModel = viewModel,
+                            officialMeeting = (statisticState as StatisticState.Success).data.nextOfficialMeeting!!,
+                            isExpanded = isMeetingExpanded,
+                            onExpandChange = { isMeetingExpanded = it }
+                        )
+                    }
+                }
             }
 
             item {
@@ -107,7 +138,9 @@ fun HomeScreen(navController: NavController) {
                     exit = shrinkVertically() + fadeOut()
                 ) {
                     Column(verticalArrangement = Arrangement. spacedBy(16.dp)) {
-                        CreateNewMeetingCard()
+                        CreateNewMeetingCard(onClick = {
+                            navController.navigate(NavRoutes.CreateMeetingRoute.route)
+                        })
                         //PreviousMeetingsCard()
                         ServicesSection()
                     }
@@ -207,24 +240,31 @@ fun TopHeaderSection() {
 }
 
 @Composable
-fun TopStatisticsCardsExpanded() {
+fun TopStatisticsCardsExpanded(statisticState: StatisticState) {
+
+    val extraColors = LocalExtraColors.current
+
     Column(verticalArrangement = Arrangement. spacedBy(12.dp)) {
         Row(
             modifier = Modifier. fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ExpandedStatCard(
-                number = "5",
+                isLoading = (statisticState is StatisticState.Loading),
+                number = if (statisticState is StatisticState.Success)
+                    statisticState.data.meetingsTodayCount else 0,
                 label = "إجتماعات اليوم",
                 icon = Icons.Default.DateRange,
-                iconColor = Color(0xFF7D3C4F),
+                iconColor = extraColors.maroonColor,
                 modifier = Modifier.weight(1f)
             )
             ExpandedStatCard(
-                number = "18",
+                isLoading = (statisticState is StatisticState.Loading),
+                number = if (statisticState is StatisticState.Success)
+                    statisticState.data.meetingsHoursToday else 0,
                 label = "ساعات الإجتماعات",
                 icon = Icons. Default. Refresh,
-                iconColor = Color(0xFF7D3C4F),
+                iconColor = extraColors.maroonColor,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -232,7 +272,12 @@ fun TopStatisticsCardsExpanded() {
 }
 
 @Composable
-fun TopStatisticsCards() {
+fun TopStatisticsCards(
+    statisticState: StatisticState,
+    onTotalMeetingsClicked: () -> Unit = {},
+    onCompletedMeetingsClicked: () -> Unit = {},
+    onUrgentMeetingsClicked: () -> Unit = {}
+) {
 
     val extraColors = LocalExtraColors.current
 
@@ -241,42 +286,53 @@ fun TopStatisticsCards() {
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         StatCard(
-            number = "12",
+            isLoading = (statisticState is StatisticState.Loading),
+            number = if (statisticState is StatisticState.Success)
+                statisticState.data.upcomingMeetingsCount else 0,
             label = "إجمالي الإجتماعات",
             icon = Icons.Default.DateRange,
             iconColor = extraColors.blueColor,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            onClick = onTotalMeetingsClicked
         )
         StatCard(
-            number = "38",
+            isLoading = (statisticState is StatisticState.Loading),
+            number = 0,
             label = "طلبات مكتملة",
             icon = Icons.Default.CheckCircle,
             iconColor = Color(0xFF4CAF50),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            onClick = onCompletedMeetingsClicked
         )
         StatCard(
-            number = "5",
+            isLoading = (statisticState is StatisticState.Loading),
+            number = if (statisticState is StatisticState.Success)
+                statisticState.data.urgentPriorityMeetingsCount else 0,
             label = "إجتماعات عاجلة",
             icon = Icons.Default.AccessTimeFilled,
             iconColor = extraColors.maroonColor,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            onClick = onUrgentMeetingsClicked
         )
     }
 }
 
 @Composable
 fun StatCard(
-    number: String,
+    isLoading: Boolean,
+    number: Int?,
     label: String,
     icon: ImageVector,
     iconColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Card(
         modifier = modifier.wrapContentHeight(),
-        colors = CardDefaults. cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults. cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier
@@ -301,13 +357,20 @@ fun StatCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = number,
-                fontFamily = AppFontFamily,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = iconColor
-            )
+            if (isLoading){
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = iconColor
+                )
+            } else {
+                Text(
+                    text = "${number ?: 0}",
+                    fontFamily = AppFontFamily,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = iconColor
+                )
+            }
 
             Text(
                 text = label,
@@ -322,7 +385,8 @@ fun StatCard(
 
 @Composable
 fun ExpandedStatCard(
-    number:  String,
+    isLoading: Boolean,
+    number:  Int?,
     label: String,
     icon: ImageVector,
     iconColor: Color,
@@ -368,19 +432,28 @@ fun ExpandedStatCard(
                 textAlign = TextAlign.Center
             )
 
-            Text(
-                text = number,
-                fontFamily = AppFontFamily,
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold,
-                color = extraColors.blueColor
-            )
+            if (isLoading){
+                CircularProgressIndicator(
+                    modifier = Modifier.size(32.dp),
+                    color = extraColors.blueColor
+                )
+            } else {
+                Text(
+                    text = "${number ?: 0}",
+                    fontFamily = AppFontFamily,
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = extraColors.blueColor
+                )
+            }
         }
     }
 }
 
 @Composable
 fun WeeklyMeetingCard(
+    viewModel: HomeViewModel,
+    officialMeeting: NextOfficialMeeting,
     isExpanded: Boolean,
     onExpandChange: (Boolean) -> Unit
 ) {
@@ -417,7 +490,7 @@ fun WeeklyMeetingCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "إجتماع مجلس الوزراء الأسبوعي",
+                    text = officialMeeting.title,
                     fontFamily = AppFontFamily,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
@@ -461,10 +534,10 @@ fun WeeklyMeetingCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                PriorityBadge("!!! عالية", Color.White)
-                AttendanceBadge("7", true)
-                AttendanceBadge("1", false)
-                AttendanceBadge("2", null)
+                PriorityBadge("${"!".repeat(officialMeeting.priorityId)} ${officialMeeting.priorityName}", Color.White)
+                AttendanceBadge(officialMeeting.acceptedCount, Status.CONFIRMED)
+                AttendanceBadge(officialMeeting.pendingCount, Status.PENDING)
+                AttendanceBadge(officialMeeting.refusedCount, Status.DECLINED)
             }
 
             AnimatedVisibility(
@@ -485,34 +558,20 @@ fun WeeklyMeetingCard(
                 Column {
                     Spacer(modifier = Modifier. height(20.dp))
 
-                    AttendanceProgressBar(70)
+                    val totalAttendees = officialMeeting.acceptedCount + officialMeeting.pendingCount + officialMeeting.refusedCount
+                    val attendancePercentage = if (totalAttendees > 0) {
+                        (officialMeeting.acceptedCount * 100) / totalAttendees
+                    } else 0
+                    AttendanceProgressBar(attendancePercentage)
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    AttendeeItem(
-                        name = "معالي الشيخ محمد بن عبدالرحمن آل ثاني",
-                        position = "رئيس مجلس الوزراء وزير الخارجية",
-                        status = AttendanceStatus.CONFIRMED,
-                        imageUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTI2xxZDQn3sPSsU0qs9VYmlx3z35pLVOeIQ&s"
-                    )
+                    officialMeeting.attendees.take(3).forEach {
+                        AttendeeItem(viewModel = viewModel, attendee = it)
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    AttendeeItem(
-                        name = "معالي السيد علي بن أحمد الكواري",
-                        position = "وزير المالية",
-                        status = AttendanceStatus.CONFIRMED,
-                        imageUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfSTyfh4Xx2Mvifa_3DY6wV8ouX8cFTtsWCg&s"
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    AttendeeItem(
-                        name = "سعادة السيدة بثنة بنت علي الجبر النعيمي",
-                        position = "وزيرة التربية والتعليم والتعليم العالي",
-                        status = AttendanceStatus.DECLINED,
-                        imageUrl = "https://images.ctfassets.net/2h1qowfuxkq7/3fwfxtwQ24eknV6kF1yqZV/d3bd5d628d20f86425cf049a31623b80/Her_Excellency_Buthaina_bint_Ali_Al-Nuaim.jpg?w=888&h=1196&fl=progressive&q=85&fm=jpg&fit=fill"
-                    )
+                        if (it != officialMeeting.attendees.take(3).last())
+                            Spacer(modifier = Modifier.height(12.dp))
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -590,12 +649,17 @@ fun PriorityBadge(text: String, color: Color) {
     }
 }
 
+enum class Status {
+    CONFIRMED, PENDING, DECLINED
+}
+
+
 @Composable
-fun AttendanceBadge(number: String, status: Boolean?) {
+fun AttendanceBadge(number: Int, status: Status) {
     val (icon, color) = when (status) {
-        true -> Icons.Default.CheckCircle to Color.White
-        false -> Icons.Default.AccessTimeFilled to Color.White
-        null -> Icons.Default.RemoveCircle to Color.White
+        Status.CONFIRMED -> Icons.Default.CheckCircle to Color.White
+        Status.PENDING -> Icons.Default.AccessTimeFilled to Color.White
+        Status.DECLINED -> Icons.Default.RemoveCircle to Color.White
     }
 
     Box(
@@ -614,7 +678,7 @@ fun AttendanceBadge(number: String, status: Boolean?) {
                 modifier = Modifier.size(12.dp)
             )
             Text(
-                text = number,
+                text = number.toString(),
                 fontFamily = AppFontFamily,
                 fontSize = 14.sp,
                 color = Color.White,
@@ -677,10 +741,8 @@ enum class AttendanceStatus {
 
 @Composable
 fun AttendeeItem(
-    name: String,
-    position: String,
-    status: AttendanceStatus,
-    imageUrl: String
+    viewModel: HomeViewModel,
+    attendee: Attendee
 ) {
 
     val extraColors = LocalExtraColors.current
@@ -700,29 +762,66 @@ fun AttendeeItem(
         ) {
 
             Box {
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
+                if (attendee.personalPhotoPath == null) {
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(CircleShape)
+                            .background(color = Color.White.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ){
+                        Text(
+                            text = attendee.fullName.firstOrNull()?.uppercase() ?: "?",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = extraColors.maroonColor
+                        )
+                    }
+                } else {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(viewModel.buildMediaUrl(attendee.personalPhotoPath))
+                            .crossfade(true)
+                            .memoryCachePolicy(CachePolicy.ENABLED)
+                            .diskCachePolicy(CachePolicy.ENABLED)
+                            .build(),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(id = R.drawable.ic_person),
+                        error = painterResource(id = R.drawable.ic_person)
+                    )
+                }
 
-                when (status) {
-                    AttendanceStatus.CONFIRMED -> {
+
+                when (attendee.status) {
+                    "Accepted" -> {
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
                             tint = Color.White,
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
-                                .size(20.dp)
+                                .size(18.dp)
                                 .background(Color(0xFF4CAF50), CircleShape)
                                 .padding(2.dp)
                         )
                     }
-                    AttendanceStatus.DECLINED -> {
+                    "Pending" -> {
+                        Icon(
+                            imageVector = Icons.Default.Pending,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .size(20.dp)
+                                .background(Color(0xFFFFC107), CircleShape)
+                                .padding(2.dp)
+                        )
+                    }
+                    "Refused" -> {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = null,
@@ -740,11 +839,12 @@ fun AttendeeItem(
             Column(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
                 horizontalAlignment = Alignment.Start,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
                     .padding(horizontal = 10.dp)
             ) {
                 Text(
-                    text = name,
+                    text = attendee.fullName,
                     fontFamily = AppFontFamily,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
@@ -752,7 +852,7 @@ fun AttendeeItem(
                 )
 
                 Text(
-                    text = position,
+                    text = attendee.jobName,
                     fontSize = 11.sp,
                     color = Color.White.copy(alpha = 0.8f)
                 )
@@ -767,9 +867,10 @@ fun AttendeeItem(
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = when (status) {
-                        AttendanceStatus.CONFIRMED -> "مؤكد"
-                        AttendanceStatus. DECLINED -> "معتذر"
+                    text = when (attendee.status) {
+                        "Accepted" -> "مؤكد"
+                        "Refused" -> "معتذر"
+                        else -> "قيد الانتظار"
                     },
                     fontSize = 12.sp,
                     color = Color.White,
@@ -781,14 +882,14 @@ fun AttendeeItem(
 }
 
 @Composable
-fun CreateNewMeetingCard() {
+fun CreateNewMeetingCard(onClick: () -> Unit) {
 
     val extraColors = LocalExtraColors.current
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { },
+            .clickable { onClick() },
         colors = CardDefaults. cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults. cardElevation(defaultElevation = 2.dp)

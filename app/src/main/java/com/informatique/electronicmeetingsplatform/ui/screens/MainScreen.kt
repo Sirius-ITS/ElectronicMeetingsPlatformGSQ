@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -28,9 +29,10 @@ import com.informatique.electronicmeetingsplatform.ui.screens.profile.ProfileScr
 import com.informatique.electronicmeetingsplatform.ui.theme.LocalExtraColors
 
 @Composable
-fun MainScreen() {
+fun MainScreen(navController: NavHostController) {
 
     val extraColors = LocalExtraColors.current
+
     val nestedNavController = rememberNavController()
 
     // State للتحكم في ظهور صفحة AddRequest كـ Modal
@@ -43,6 +45,7 @@ fun MainScreen() {
     Box(modifier = Modifier.fillMaxSize()) {
         // المحتوى الأساسي
         NestedNavHost(
+            navController = navController,
             nestedNavController = nestedNavController,
             onNavigateToAddRequest = { showAddRequestModal = true },
             modifier = Modifier
@@ -133,6 +136,7 @@ fun MainScreen() {
 
 @Composable
 fun NestedNavHost(
+    navController: NavController,
     nestedNavController: NavHostController,
     onNavigateToAddRequest: () -> Unit,
     modifier: Modifier = Modifier
@@ -143,11 +147,11 @@ fun NestedNavHost(
         modifier = modifier
     ) {
         composable(NavRoutes.HomeRoute.route) {
-            HomeScreen(navController = nestedNavController)
+            HomeScreen(navController = navController)
         }
 
         composable(NavRoutes.CalenderRoute.route) {
-            CalendarScreen(navController = nestedNavController)
+            CalendarScreen(navController = navController)
         }
 
         composable(NavRoutes.MyRequestsRoute.route) {
@@ -155,14 +159,15 @@ fun NestedNavHost(
                 navController = nestedNavController,
                 onNavigateToAddRequest = onNavigateToAddRequest
             )
+            MyRequestScreen(navController = navController)
         }
 
         composable(NavRoutes.PreviousMeetingRoute.route) {
-            PreviousMeetingScreen(navController = nestedNavController)
+            PreviousMeetingScreen(navController = navController)
         }
 
         composable(NavRoutes.ProfileRoute.route) {
-            ProfileScreen(navController = nestedNavController)
+            ProfileScreen(navController = navController)
         }
     }
 }

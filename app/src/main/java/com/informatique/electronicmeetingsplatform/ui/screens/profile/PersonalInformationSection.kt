@@ -65,7 +65,7 @@ fun PersonalInformationSection(viewModel: ProfileViewModel){
         // Bank details
         BankDetailsSection()
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 

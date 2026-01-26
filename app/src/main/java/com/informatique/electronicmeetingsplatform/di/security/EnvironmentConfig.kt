@@ -52,6 +52,7 @@ data class Environment(
     val id: EnvironmentType = EnvironmentType.DEVELOPMENT,
     val name: String = "",
     val baseUrl: String = "",
+    val mediaUrl: String = "",
     val apiKey: String = "",
     val features: FeatureFlags = FeatureFlags(),
     val security: SecurityConfig = SecurityConfig()
@@ -62,6 +63,7 @@ data class Environment(
             id = EnvironmentType.DEVELOPMENT,
             name = "Development",
             baseUrl = "http://109.123.243.32:9100/",
+            mediaUrl = "http://109.123.243.32:9100/api/media/download/",
             apiKey = "dev_default_key_secure_123",
             features = FeatureFlags(
                 enableExperimentalFeatures = true,
