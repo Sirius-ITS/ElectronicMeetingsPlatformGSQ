@@ -31,7 +31,8 @@ data class BottomNavItem(
 @Composable
 fun BottomNavigationBar(
     navController: NavController,
-    extraColors: ExtraColors
+    extraColors: ExtraColors,
+    modifier: Modifier = Modifier
 ) {
     val items = listOf(
         BottomNavItem(
@@ -65,7 +66,7 @@ fun BottomNavigationBar(
     val currentRoute = navBackStackEntry?.destination?.route
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(16.dp),
         shape = RoundedCornerShape(24.dp),
