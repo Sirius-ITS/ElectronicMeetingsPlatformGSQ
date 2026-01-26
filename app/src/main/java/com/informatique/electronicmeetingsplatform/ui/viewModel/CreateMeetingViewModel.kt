@@ -1,6 +1,10 @@
 package com.informatique.electronicmeetingsplatform.ui.viewModel
 
+import android.Manifest
+import android.content.Context
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.informatique.electronicmeetingsplatform.business.BusinessState
@@ -10,13 +14,16 @@ import com.informatique.electronicmeetingsplatform.business.meeting.MeetingAttac
 import com.informatique.electronicmeetingsplatform.business.meeting.MeetingInviteesUseCase
 import com.informatique.electronicmeetingsplatform.business.meeting.MeetingPrioritiesUseCase
 import com.informatique.electronicmeetingsplatform.business.meeting.MeetingTypesUseCase
+import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.Meeting
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.AttachmentResponse
 import com.informatique.electronicmeetingsplatform.data.model.meeting.create.Attendee
+import com.informatique.electronicmeetingsplatform.di.security.EnvironmentConfig
 import com.informatique.electronicmeetingsplatform.ui.components.popup.AlertPopupManager
 import com.informatique.electronicmeetingsplatform.data.model.meeting.type.Data as TypeData
 import com.informatique.electronicmeetingsplatform.data.model.meeting.priorities.Data as PriorityData
 import com.informatique.electronicmeetingsplatform.data.model.meeting.create.Data as CreateMeetingData
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +42,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class CreateMeetingViewModel @Inject constructor(
+    @param:ApplicationContext private val context: Context,
     private val meetingTypesUseCase: MeetingTypesUseCase,
     private val meetingPrioritiesUseCase: MeetingPrioritiesUseCase,
     private val meetingInviteesUseCase: MeetingInviteesUseCase,
@@ -123,10 +131,15 @@ class CreateMeetingViewModel @Inject constructor(
     // Add a flag to track if invitees have been loaded
     private var inviteesLoaded = false
 
+
     init {
         meetingTypes()
         meetingPriorities()
         observeFormValidation()
+    }
+
+    fun getMediaUrl(): String {
+        return EnvironmentConfig.currentEnvironment.mediaUrl
     }
 
     private fun observeFormValidation() {
@@ -320,6 +333,31 @@ class CreateMeetingViewModel @Inject constructor(
                     _createMeetingState.value = CreateMeetingState.Loading
                 }
             }
+        }
+    }
+
+    fun addEventToCalendar(detail: CreateMeetingData, onClick: () -> Unit) {
+        try {
+            val contentResolver = context.contentResolver
+            val values = android.content.ContentValues().apply {
+                put(android.provider.CalendarContract.Events.DTSTART, detail.startDateTimeMillis)
+                put(android.provider.CalendarContract.Events.DTEND, detail.endDateTimeMillis)
+                put(android.provider.CalendarContract.Events.TITLE, detail.topic)
+                put(android.provider.CalendarContract.Events.DESCRIPTION, detail.notes)
+                put(android.provider.CalendarContract.Events.EVENT_LOCATION, detail.location)
+                put(android.provider.CalendarContract.Events.CALENDAR_ID, 1) // Use primary calendar
+                put(android.provider.CalendarContract.Events.EVENT_TIMEZONE, java.util.TimeZone.getDefault().id)
+            }
+            contentResolver.insert(android.provider.CalendarContract.Events.CONTENT_URI, values)
+            viewModelScope.launch {
+                alertPopupManager.showSuccess(
+                    message = "تم حفظ بيانات الاجتماع واضافته للتقويم بنجاح",
+                    actionLabel = "موافق",
+                    onAction = onClick
+                )
+            }
+        } catch (e: Exception){
+            e.printStackTrace()
         }
     }
 

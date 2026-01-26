@@ -1,5 +1,9 @@
 package com.informatique.electronicmeetingsplatform.ui.screens.meetings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import androidx.compose.foundation.background
@@ -15,22 +19,26 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.Attendee
-import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.MeetingDetail
+import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.Meeting
 import com.informatique.electronicmeetingsplatform.ui.components.MeetingCard
 import com.informatique.electronicmeetingsplatform.ui.theme.AppTheme
 import com.informatique.electronicmeetingsplatform.ui.theme.LocalExtraColors
@@ -39,18 +47,31 @@ import com.informatique.electronicmeetingsplatform.ui.viewModel.MeetingsViewMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MeetingDetailScreen(navController: NavController, meetingId: String) {
+fun MeetingDetailScreen(viewModel: MeetingsViewModel, navController: NavController, meetingId: String) {
 
+    val context = LocalContext.current
     val extraColors = LocalExtraColors.current
 
-    val viewModel = hiltViewModel<MeetingsViewModel>()
-
-    val meetingData by viewModel.selectedMeeting.collectAsStateWithLifecycle()
     val meetingDetailState by viewModel.meetingDetailState.collectAsStateWithLifecycle()
+
+    val pendingCalendarAdd = remember { mutableStateOf<Meeting?>(null) }
+
+    val calendarPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val readGranted = permissions[Manifest.permission.READ_CALENDAR] == true
+        val writeGranted = permissions[Manifest.permission.WRITE_CALENDAR] == true
+        if (readGranted && writeGranted) {
+            pendingCalendarAdd.value?.let { detail ->
+                viewModel.addEventToCalendar(detail)
+                pendingCalendarAdd.value = null
+            }
+        }
+    }
 
     LaunchedEffect(meetingId) {
         if (!meetingId.isEmpty())
-            viewModel.meetingDetail(meetingId = meetingId.toInt())
+            viewModel.getMeetingById(meetingId = meetingId.toInt())
     }
 
     Scaffold { paddingValues ->
@@ -128,10 +149,7 @@ fun MeetingDetailScreen(navController: NavController, meetingId: String) {
 
                     // Attendees Card
                     item {
-                        AttendeesCard(
-                            meeting = detail,
-                            isOrganizer = meetingData?.isOrganizer ?: false
-                        )
+                        AttendeesCard(meeting = detail)
                     }
 
                     // Notes Card
@@ -141,7 +159,7 @@ fun MeetingDetailScreen(navController: NavController, meetingId: String) {
 
                     // Attachments Card (shown in second image)
                     item {
-                        AttachmentsCard(detail)
+                        AttachmentsCard(viewModel, detail)
                     }
 
                     item {
@@ -149,35 +167,166 @@ fun MeetingDetailScreen(navController: NavController, meetingId: String) {
                     }
                 }
 
-                // Add to calender btn
-                Button(
-                    onClick = {
-                        val intent = android.content.Intent(android.content.Intent.ACTION_INSERT).apply {
-                            data = android.provider.CalendarContract.Events.CONTENT_URI
-                            putExtra(android.provider.CalendarContract.Events.TITLE, detail.topic)
-                            putExtra(android.provider.CalendarContract.Events.EVENT_LOCATION, detail.location)
-                            putExtra(android.provider.CalendarContract.Events.DESCRIPTION, detail.notes)
-                            putExtra(android.provider.CalendarContract.EXTRA_EVENT_BEGIN_TIME, detail.startDateTimeMillis)
-                            putExtra(android.provider.CalendarContract.EXTRA_EVENT_END_TIME, detail.endDateTimeMillis)
-                        }
-                        navController.context.startActivity(intent)
-                    },
+                // Accept or Refuse buttons
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
                         .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = extraColors.maroonColor
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(
-                        Icons.Default.DateRange,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text("إضافة للتقويم", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    // Add to calender btn
+                    if (detail.isOrganizer == false && detail.myStatus == "Accepted") {
+                        Button(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp)
+                                .padding(16.dp),
+                            onClick = {
+                                val hasReadPermission = ContextCompat.checkSelfPermission(
+                                    context, Manifest.permission.READ_CALENDAR
+                                ) == PackageManager.PERMISSION_GRANTED
+                                val hasWritePermission = ContextCompat.checkSelfPermission(
+                                    context, Manifest.permission.WRITE_CALENDAR
+                                ) == PackageManager.PERMISSION_GRANTED
+
+                                if (hasReadPermission && hasWritePermission) {
+                                    viewModel.addEventToCalendar(detail)
+                                } else {
+                                    pendingCalendarAdd.value = detail
+                                    calendarPermissionLauncher.launch(
+                                        arrayOf(
+                                            Manifest.permission.READ_CALENDAR,
+                                            Manifest.permission.WRITE_CALENDAR
+                                        )
+                                    )
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = extraColors.maroonColor
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.DateRange,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("إضافة للتقويم", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
+
+                    if (detail.isOrganizer == false && detail.myStatus == "Pending") {
+                        Button(
+                            onClick = {
+                                viewModel.respondMeeting(
+                                    meetingId = meetingId.toInt(),
+                                    response = "accept",
+                                    reasonId = 0,
+                                    otherReason = ""
+                                )
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = extraColors.success,
+                            )
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ){
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = Color.White
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = "تأكيد الحضور",
+                                    color = Color.White,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    if (detail.isOrganizer == false && detail.myStatus == "Pending") {
+                        Button(
+                            onClick = {
+                                viewModel.respondMeeting(
+                                    meetingId = meetingId.toInt(),
+                                    response = "apology",
+                                    reasonId = 0,
+                                    otherReason = ""
+                                )
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = extraColors.maroonColor
+                            )
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = null,
+                                    tint = Color.White
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = "اعتذار",
+                                    color = Color.White,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    if (detail.isOrganizer == false && (detail.myStatus == "Refused"
+                                || (detail.myStatus == "Accepted" && detail.canApologyAfterAccept == true))) {
+                        Button(
+                            onClick = {
+                                viewModel.respondMeeting(
+                                    meetingId = meetingId.toInt(),
+                                    response = "apology",
+                                    reasonId = 0,
+                                    otherReason = ""
+                                )
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = extraColors.maroonColor
+                            )
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = null,
+                                    tint = Color.White
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = "تعديل الرد",
+                                    color = Color.White,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -185,7 +334,7 @@ fun MeetingDetailScreen(navController: NavController, meetingId: String) {
 }
 
 @Composable
-fun MeetingTypeCard(meeting: MeetingDetail) {
+fun MeetingTypeCard(meeting: Meeting) {
 
     val extraColors = LocalExtraColors.current
 
@@ -245,7 +394,7 @@ fun MeetingTypeCard(meeting: MeetingDetail) {
 }
 
 @Composable
-fun MeetingInfoCard(meeting: MeetingDetail) {
+fun MeetingInfoCard(meeting: Meeting) {
     MeetingCard {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -285,7 +434,7 @@ fun InfoRow(label: String, value: String) {
 }
 
 @Composable
-fun AttendeesCard(meeting: MeetingDetail, isOrganizer: Boolean) {
+fun AttendeesCard(meeting: Meeting) {
 
     val extraColors = LocalExtraColors.current
 
@@ -356,7 +505,7 @@ fun AttendeesCard(meeting: MeetingDetail, isOrganizer: Boolean) {
             Spacer(Modifier.height(16.dp))
 
             meeting.attendees.forEach { attendee ->
-                AttendeeItem(attendee = attendee, isOrganizer = isOrganizer)
+                AttendeeItem(attendee = attendee)
                 Spacer(Modifier.height(8.dp))
             }
         }
@@ -393,7 +542,7 @@ fun RowScope.StatusBadge(count: String, textColor: Color, icon: ImageVector) {
 }
 
 @Composable
-fun AttendeeItem(attendee: Attendee, isOrganizer: Boolean) {
+fun AttendeeItem(attendee: Attendee) {
 
     val extraColors = LocalExtraColors.current
 
@@ -461,7 +610,7 @@ fun AttendeeItem(attendee: Attendee, isOrganizer: Boolean) {
                             color = extraColors.blueColor
                         )
 
-                        if (isOrganizer) {
+                        if (attendee.isOrganizer == true) {
                             Surface(
                                 shape = RoundedCornerShape(16.dp),
                                 color = extraColors.lightDrab
@@ -533,7 +682,7 @@ fun AttendeeItem(attendee: Attendee, isOrganizer: Boolean) {
 }
 
 @Composable
-fun NotesCard(meeting: MeetingDetail) {
+fun NotesCard(meeting: Meeting) {
 
     val extraColors = LocalExtraColors.current
 
@@ -573,7 +722,7 @@ fun NotesCard(meeting: MeetingDetail) {
 }
 
 @Composable
-fun AttachmentsCard(meeting: MeetingDetail) {
+fun AttachmentsCard(viewModel: MeetingsViewModel, meeting: Meeting) {
 
     val extraColors = LocalExtraColors.current
 
@@ -634,31 +783,14 @@ fun AttachmentsCard(meeting: MeetingDetail) {
                             horizontalAlignment = Alignment.Start
                         ) {
                             Text(
-                                attachment,
+                                attachment.filePath,
                                 fontSize = 12.sp,
                                 color = extraColors.blueColor,
                                 fontWeight = FontWeight.Medium,
                                 maxLines = 2
                             )
                             Text(
-                                when {
-                                    attachment.endsWith(".jpg", ignoreCase = true) ||
-                                            attachment.endsWith(".jpeg", ignoreCase = true) ||
-                                            attachment.endsWith(".png", ignoreCase = true) ||
-                                            attachment.endsWith(".gif", ignoreCase = true) -> "صورة"
-                                    attachment.endsWith(".pdf", ignoreCase = true) -> "PDF"
-                                    attachment.endsWith(".doc", ignoreCase = true) ||
-                                            attachment.endsWith(".docx", ignoreCase = true) -> "Word"
-                                    attachment.endsWith(".xls", ignoreCase = true) ||
-                                            attachment.endsWith(".xlsx", ignoreCase = true) -> "Excel"
-                                    attachment.endsWith(".ppt", ignoreCase = true) ||
-                                            attachment.endsWith(".pptx", ignoreCase = true) -> "PowerPoint"
-                                    attachment.endsWith(".mp4", ignoreCase = true) ||
-                                            attachment.endsWith(".avi", ignoreCase = true) -> "فيديو"
-                                    attachment.endsWith(".mp3", ignoreCase = true) ||
-                                            attachment.endsWith(".wav", ignoreCase = true) -> "صوت"
-                                    else -> "ملف"
-                                },
+                                viewModel.getAttachmentType(attachment.filePath),
                                 fontSize = 10.sp,
                                 color = extraColors.textGray
                             )
@@ -725,7 +857,11 @@ fun AttachmentsCard(meeting: MeetingDetail) {
 fun MeetingDetailPreview(){
     AppTheme {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            MeetingDetailScreen(navController = rememberNavController(), meetingId = "56"/*, isOrganizer = false*/)
+            MeetingDetailScreen(
+                viewModel = hiltViewModel(),
+                navController = rememberNavController(),
+                meetingId = "56"
+            )
         }
     }
 }

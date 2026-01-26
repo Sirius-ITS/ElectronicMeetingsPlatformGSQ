@@ -1,6 +1,8 @@
 package com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting
 
 import kotlinx.serialization.Serializable
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Serializable
@@ -11,6 +13,7 @@ data class Meeting(
     val canApologyAfterAccept: Boolean? = null,
     val endDateTime: String,
     val externalAttendees: List<Attendee>,
+    val notes: String,
     val id: Int,
     val isOrganizer: Boolean? = null,
     val isRepeated: Boolean,
@@ -27,10 +30,28 @@ data class Meeting(
     val startDateTime: String,
     val topic: String
 ){
+
+    val isStartDateTimeToday: Boolean
+        get() = try {
+            val localDateTime = LocalDateTime.parse(startDateTime)
+            val today = LocalDateTime.now().toLocalDate()
+            localDateTime.toLocalDate() == today
+        } catch (_: Exception) {
+            false
+        }
+
+    val startDateTimeMillis: Long
+        get() = try {
+            val localDateTime = LocalDateTime.parse(startDateTime)
+            localDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        } catch (_: Exception) {
+            0L
+        }
+
     val startDate: String
         get() = try {
-            val localDateTime = java.time.LocalDateTime.parse(startDateTime)
-            val formatter = java.time.format.DateTimeFormatter.ofPattern(
+            val localDateTime = LocalDateTime.parse(startDateTime)
+            val formatter = DateTimeFormatter.ofPattern(
                 "dd MMMM yyyy",
                 Locale.getDefault()
             )
@@ -39,10 +60,18 @@ data class Meeting(
             startDateTime
         }
 
+    val detailedStartDate: String get() = try {
+        val localDateTime = LocalDateTime.parse(startDateTime)
+        val formatter = DateTimeFormatter.ofPattern("EEEE, dd MMMM yyyy", Locale.getDefault())
+        formatter.format(localDateTime)
+    } catch (_: Exception) {
+        startDateTime
+    }
+
     val startTime: String
         get() = try {
-            val localDateTime = java.time.LocalDateTime.parse(startDateTime)
-            val formatter = java.time.format.DateTimeFormatter.ofPattern(
+            val localDateTime = LocalDateTime.parse(startDateTime)
+            val formatter = DateTimeFormatter.ofPattern(
                 "HH:mm",
                 Locale.getDefault()
             )
@@ -51,10 +80,19 @@ data class Meeting(
             startDateTime
         }
 
+
+    val endDateTimeMillis: Long
+        get() = try {
+            val localDateTime = LocalDateTime.parse(endDateTime)
+            localDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        } catch (_: Exception) {
+            0L
+        }
+
     val endDate: String
         get() = try {
-            val localDateTime = java.time.LocalDateTime.parse(endDateTime)
-            val formatter = java.time.format.DateTimeFormatter.ofPattern(
+            val localDateTime = LocalDateTime.parse(endDateTime)
+            val formatter = DateTimeFormatter.ofPattern(
                 "dd MMMM yyyy",
                 Locale.getDefault()
             )
@@ -65,8 +103,8 @@ data class Meeting(
 
     val endTime: String
         get() = try {
-            val localDateTime = java.time.LocalDateTime.parse(endDateTime)
-            val formatter = java.time.format.DateTimeFormatter.ofPattern(
+            val localDateTime = LocalDateTime.parse(endDateTime)
+            val formatter = DateTimeFormatter.ofPattern(
                 "HH:mm",
                 Locale.getDefault()
             )

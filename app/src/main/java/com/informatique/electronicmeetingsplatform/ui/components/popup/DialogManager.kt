@@ -94,6 +94,21 @@ class DialogManager @Inject constructor() {
     /**
      * Show confirmation dialog with confirm/cancel actions
      */
+    fun showSuccess(
+        message: String,
+        confirmText: String = "موافق",
+        onConfirm: () -> Unit
+    ) {
+        _currentDialog.value = DialogData.Success(
+            message = message,
+            confirmText = confirmText,
+            onConfirm = onConfirm
+        )
+    }
+
+    /**
+     * Show confirmation dialog with confirm/cancel actions
+     */
     fun showConfirmation(
         message: String,
         title: String? = null,

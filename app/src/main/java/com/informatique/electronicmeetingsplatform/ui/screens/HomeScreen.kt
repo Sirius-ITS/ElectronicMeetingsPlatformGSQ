@@ -51,6 +51,7 @@ import com.informatique.electronicmeetingsplatform.ui.theme.LocalExtraColors
 import com.informatique.electronicmeetingsplatform.ui.viewModel.HomeViewModel
 import com.informatique.electronicmeetingsplatform.ui.viewModel.StatisticState
 import com.informatique.electronicmeetingsplatform.R
+import com.informatique.electronicmeetingsplatform.ui.screens.meetings.MeetingsType
 
 @Composable
 fun HomeScreen(navController: NavController) {
@@ -81,7 +82,10 @@ fun HomeScreen(navController: NavController) {
             item { TopHeaderSection() }
 
             item {
-                TopStatisticsCardsExpanded(statisticState = statisticState)
+                TopStatisticsCardsExpanded(
+                    navController = navController,
+                    statisticState = statisticState
+                )
 //                AnimatedVisibility(
 //                    visible = showTopCards && isMeetingExpanded,
 //                    enter = expandVertically(
@@ -110,10 +114,14 @@ fun HomeScreen(navController: NavController) {
                     TopStatisticsCards(
                         statisticState = statisticState,
                         onTotalMeetingsClicked = {
-                            navController.navigate(NavRoutes.AllMeetingRoute.route)
+                            navController.navigate(
+                                NavRoutes.AllMeetingRoute.createRoute(MeetingsType.All))
                         },
                         onCompletedMeetingsClicked = {},
-                        onUrgentMeetingsClicked = {}
+                        onUrgentMeetingsClicked = {
+                            navController.navigate(
+                                NavRoutes.AllMeetingRoute.createRoute(MeetingsType.Urgent))
+                        }
                     )
                 }
             }
@@ -240,7 +248,7 @@ fun TopHeaderSection() {
 }
 
 @Composable
-fun TopStatisticsCardsExpanded(statisticState: StatisticState) {
+fun TopStatisticsCardsExpanded(navController: NavController, statisticState: StatisticState) {
 
     val extraColors = LocalExtraColors.current
 
@@ -256,7 +264,11 @@ fun TopStatisticsCardsExpanded(statisticState: StatisticState) {
                 label = "إجتماعات اليوم",
                 icon = Icons.Default.DateRange,
                 iconColor = extraColors.maroonColor,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                onClick = {
+                    navController.navigate(
+                        NavRoutes.AllMeetingRoute.createRoute(MeetingsType.Today))
+                }
             )
             ExpandedStatCard(
                 isLoading = (statisticState is StatisticState.Loading),
@@ -265,7 +277,8 @@ fun TopStatisticsCardsExpanded(statisticState: StatisticState) {
                 label = "ساعات الإجتماعات",
                 icon = Icons. Default. Refresh,
                 iconColor = extraColors.maroonColor,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                onClick = {}
             )
         }
     }
@@ -390,12 +403,14 @@ fun ExpandedStatCard(
     label: String,
     icon: ImageVector,
     iconColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
 
     val extraColors = LocalExtraColors.current
 
     Card(
+        onClick = onClick,
         modifier = modifier.wrapContentHeight(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),

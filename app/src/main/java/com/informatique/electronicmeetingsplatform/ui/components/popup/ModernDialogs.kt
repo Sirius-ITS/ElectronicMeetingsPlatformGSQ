@@ -34,6 +34,10 @@ fun DialogHost(
 
     currentDialog?.let { dialog ->
         when (dialog) {
+            is DialogData.Success -> ModernSuccessDialog(
+                data = dialog,
+                onDismiss = { dialogManager.dismissDialog() }
+            )
             is DialogData.Alert -> ModernAlertDialog(
                 data = dialog,
                 onDismiss = { dialogManager.dismissDialog() }
@@ -54,6 +58,114 @@ fun DialogHost(
                 data = dialog,
                 onDismiss = { dialogManager.dismissDialog() }
             )
+        }
+    }
+}
+
+/**
+ * Modern alert dialog with animated icon
+ */
+@Composable
+fun ModernSuccessDialog(
+    data: DialogData.Success,
+    onDismiss: () -> Unit
+) {
+    val config = data.type.getConfig()
+    var showContent by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        showContent = true
+    }
+
+    Dialog(
+        onDismissRequest = { if (data.dismissible) onDismiss() },
+        properties = DialogProperties(
+            dismissOnBackPress = data.dismissible,
+            dismissOnClickOutside = data.dismissible,
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        AnimatedVisibility(
+            visible = showContent,
+            enter = scaleIn(
+                initialScale = 0.8f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
+                )
+            ) + fadeIn(),
+            exit = scaleOut(targetScale = 0.8f) + fadeOut()
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .padding(16.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Animated icon with pulse effect
+                    AnimatedDialogIcon(
+                        icon = config.icon,
+                        iconColor = config.iconColor,
+                        backgroundColor = config.iconBackgroundColor
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Title
+//                    data.title?.let { title ->
+//                        Text(
+//                            text = title,
+//                            style = MaterialTheme.typography.headlineSmall,
+//                            fontWeight = FontWeight.Bold,
+//                            textAlign = TextAlign.Center,
+//                            color = MaterialTheme.colorScheme.onSurface
+//                        )
+//                        Spacer(modifier = Modifier.height(8.dp))
+//                    }
+
+                    // Message
+                    Text(
+                        text = data.message,
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                        lineHeight = 24.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Confirm button
+                    Button(
+                        onClick = {
+                            data.onConfirm()
+                            onDismiss()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = config.confirmButtonColor
+                        )
+                    ) {
+                        Text(
+                            text = data.confirmText,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -818,6 +930,10 @@ class DialogState {
     fun DialogHost(modifier: Modifier = Modifier) {
         currentDialog?.let { dialog ->
             when (dialog) {
+                is DialogData.Success -> ModernSuccessDialog(
+                    data = dialog,
+                    onDismiss = { dismiss() }
+                )
                 is DialogData.Alert -> ModernAlertDialog(
                     data = dialog,
                     onDismiss = { dismiss() }

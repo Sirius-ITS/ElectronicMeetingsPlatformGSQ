@@ -31,6 +31,7 @@ import com.informatique.electronicmeetingsplatform.ui.theme.LocalExtraColors
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InviteesBottomSheet(
+    mediaUrl: String,
     invitees: List<Attendee>,
     sheetState: SheetState,
     onDismiss: () -> Unit,
@@ -218,6 +219,7 @@ fun InviteesBottomSheet(
                             (it.jobDescription?.contains(searchQuery, ignoreCase = true) == true)
                 }) { invitee ->
                     InviteeCard(
+                        mediaUrl = mediaUrl,
                         invitee = invitee,
                         isSelected = selectedInvitees[invitee.id] ?: false,
                         onToggle = { attendee ->
@@ -234,6 +236,7 @@ fun InviteesBottomSheet(
 
 @Composable
 fun InviteeCard(
+    mediaUrl: String,
     invitee: Attendee,
     isSelected: Boolean,
     onToggle: (Attendee) -> Unit
@@ -282,10 +285,9 @@ fun InviteeCard(
                         )
                     } else {
                         AsyncImage(
-                            model = invitee.personalPhotoPath,
+                            model = mediaUrl.plus(invitee.personalPhotoPath),
                             contentDescription = "Profile Picture",
-                            modifier = Modifier
-                                .fillMaxSize(),
+                            modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Fit
                         )
                     }

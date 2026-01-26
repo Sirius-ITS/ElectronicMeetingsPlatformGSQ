@@ -1,6 +1,7 @@
 package com.informatique.electronicmeetingsplatform.ui.screens
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,12 +29,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -65,6 +68,7 @@ import kotlin.collections.plus
 @Composable
 fun CreateMeetingScreen(navController: NavController) {
 
+    val context = LocalContext.current
     val extraColors = LocalExtraColors.current
 
     val viewModel = hiltViewModel<CreateMeetingViewModel>()
@@ -158,6 +162,22 @@ fun CreateMeetingScreen(navController: NavController) {
         val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
         viewModel.updateDateTo(LocalDateTime.of(endDate, LocalTime.MIDNIGHT).format(dateFormatter))
         viewModel.updateTimeTo(endTime.format(timeFormatter))
+    }
+
+    val calendarPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val readGranted = permissions[Manifest.permission.READ_CALENDAR] == true
+        val writeGranted = permissions[Manifest.permission.WRITE_CALENDAR] == true
+        if (readGranted && writeGranted) {
+            viewModel.createMeeting(
+                attachmentPaths = uploadedAttachments.map { it.fileName },
+                externalAttendees = externalAttendees,
+                isRepeated = isRecurring,
+                repeatRule = recurringType.name,
+                notes = notes
+            )
+        }
     }
 
 
@@ -578,13 +598,29 @@ fun CreateMeetingScreen(navController: NavController) {
                 Button(
                     enabled = isSaveEnabled,
                     onClick = {
-                        viewModel.createMeeting(
-                            attachmentPaths = uploadedAttachments.map { it.fileName },
-                            externalAttendees = externalAttendees,
-                            isRepeated = isRecurring,
-                            repeatRule = recurringType.name,
-                            notes = notes
-                        )
+                        val hasReadPermission = ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.READ_CALENDAR
+                        ) == PackageManager.PERMISSION_GRANTED
+                        val hasWritePermission = ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.WRITE_CALENDAR
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        if (hasReadPermission && hasWritePermission) {
+                            viewModel.createMeeting(
+                                attachmentPaths = uploadedAttachments.map { it.fileName },
+                                externalAttendees = externalAttendees,
+                                isRepeated = isRecurring,
+                                repeatRule = recurringType.name,
+                                notes = notes
+                            )
+                        } else {
+                            calendarPermissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.READ_CALENDAR,
+                                    Manifest.permission.WRITE_CALENDAR
+                                )
+                            )
+                        }
                     },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
@@ -631,6 +667,15 @@ fun CreateMeetingScreen(navController: NavController) {
                         color = extraColors.maroonColor,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
+                }
+            }
+
+            if (createMeetingState.value is CreateMeetingState.Success){
+                val meeting = (createMeetingState.value as CreateMeetingState.Success).data
+                LaunchedEffect(meeting) {
+                    viewModel.addEventToCalendar(meeting){
+                        navController.popBackStack()
+                    }
                 }
             }
         }
@@ -1035,6 +1080,7 @@ fun InviteesSection(
 
         if (showBottomSheet && meetingInviteeState.value is InviteeState.Success) {
             InviteesBottomSheet(
+                mediaUrl = viewModel.getMediaUrl(),
                 invitees = (meetingInviteeState.value as InviteeState.Success).data,
                 sheetState = sheetState,
                 onDismiss = { showBottomSheet = false },

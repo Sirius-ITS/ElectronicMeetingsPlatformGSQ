@@ -2,6 +2,8 @@ package com.informatique.electronicmeetingsplatform.data.repository.meeting
 
 import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.AllMeetingDetailResponse
 import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.AllMeetingResponse
+import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.RespondMeetingRequest
+import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.RespondMeetingResponse
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.AttachmentRequest
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.AttachmentResponse
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.DeleteAttachmentRequest
@@ -169,6 +171,23 @@ class MeetingRepositoryImpl @Inject constructor(
         checkSessionExpiration(response)
 
         // If login successful, save tokens
+        when (response) {
+            is ApiResponse.Success -> {}
+            else -> { /* No action needed */ }
+        }
+
+        emit(response)
+    }
+
+    override suspend fun meetingRespondStatus(respond: RespondMeetingRequest):
+            Flow<ApiResponse<RespondMeetingResponse>> = flow {
+        emit(ApiResponse.Loading)
+
+        val response = meetingApiService.meetingRespondStatus(respond)
+
+        // Check for session expiration
+        checkSessionExpiration(response)
+
         when (response) {
             is ApiResponse.Success -> {}
             else -> { /* No action needed */ }

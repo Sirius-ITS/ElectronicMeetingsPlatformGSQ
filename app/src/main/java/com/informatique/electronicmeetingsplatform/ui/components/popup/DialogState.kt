@@ -32,6 +32,18 @@ sealed class DialogData {
     /**
      * Alert dialog - simple informational dialog with single action
      */
+    data class Success(
+        val message: String,
+        val type: DialogType = DialogType.SUCCESS,
+        val confirmText: String = "موافق",
+        val onConfirm: () -> Unit = {},
+        override val dismissible: Boolean = true,
+        override val id: Long = System.currentTimeMillis()
+    ) : DialogData()
+
+    /**
+     * Alert dialog - simple informational dialog with single action
+     */
     data class Alert(
         val message: String,
         val type: DialogType = DialogType.INFO,

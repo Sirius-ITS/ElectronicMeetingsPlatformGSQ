@@ -4,7 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -27,37 +27,86 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.Meeting
 import com.informatique.electronicmeetingsplatform.navigation.NavRoutes
-import com.informatique.electronicmeetingsplatform.ui.components.WeeklyMeetingCard
 import com.informatique.electronicmeetingsplatform.ui.theme.AppTheme
 import com.informatique.electronicmeetingsplatform.ui.theme.LocalExtraColors
 import com.informatique.electronicmeetingsplatform.ui.viewModel.AllMeetingState
 import com.informatique.electronicmeetingsplatform.ui.viewModel.MeetingsViewModel
 
+enum class MeetingsType {
+    All,
+    Urgent,
+    Today
+}
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AllMeetingScreen(navController: NavController) {
+fun AllMeetingScreen(
+    viewModel: MeetingsViewModel,
+    navController: NavController,
+    type: Int = MeetingsType.All.ordinal
+) {
 
     val extraColors = LocalExtraColors.current
-
-    val viewModel = hiltViewModel<MeetingsViewModel>()
 
     val allMeetingUiState by viewModel.allMeetingState.collectAsState()
 
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    val meetingsCount = when (val state = allMeetingUiState) {
-        is AllMeetingState.Success -> {
-            val data = state.data
-            when (selectedTab) {
-                0 -> listOfNotNull(data.nextOfficialMeeting).size + data.invited.size + data.organized.size
-                1 -> data.organized.size
-                else -> data.invited.size
+    val meetingsCount = when(type){
+        MeetingsType.Urgent.ordinal -> {
+            when (val state = allMeetingUiState) {
+                is AllMeetingState.Success -> {
+                    val data = state.data
+                    when (selectedTab) {
+                        0 -> data.invited.filter { it.priorityId == 3 }.size + data.organized.filter { it.priorityId == 3 }.size
+                        1 -> data.organized.filter { it.priorityId == 3 }.size
+                        else -> data.invited.filter { it.priorityId == 3 }.size
+                    }
+                }
+
+                else -> 0
             }
         }
-        else -> 0
+        MeetingsType.Today.ordinal -> {
+            when (val state = allMeetingUiState) {
+                is AllMeetingState.Success -> {
+                    val data = state.data
+                    when (selectedTab) {
+                        0 -> data.invited.filter { it.isStartDateTimeToday }.size + data.organized.filter { it.isStartDateTimeToday }.size
+                        1 -> data.organized.filter { it.isStartDateTimeToday }.size
+                        else -> data.invited.filter { it.isStartDateTimeToday }.size
+                    }
+                }
+
+                else -> 0
+            }
+        }
+        else -> {
+            when (val state = allMeetingUiState) {
+                is AllMeetingState.Success -> {
+                    val data = state.data
+                    when (selectedTab) {
+                        0 -> data.invited.size + data.organized.size
+                        1 -> data.organized.size
+                        else -> data.invited.size
+                    }
+                }
+
+                else -> 0
+            }
+        }
     }
 
-    var isMeetingExpanded by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        viewModel.allMeetings()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.onCleared()
+        }
+    }
 
 
     Column (
@@ -82,7 +131,11 @@ fun AllMeetingScreen(navController: NavController) {
                 horizontalAlignment = Alignment.Start
             ) {
                 Text(
-                    text = "إجمالي الاجتماعات",
+                    text = when(type) {
+                        MeetingsType.Urgent.ordinal -> "الاجتماعات العاجلة"
+                        MeetingsType.Today.ordinal -> "اجتماعات اليوم"
+                        else -> "إجمالي الاجتماعات"
+                    },
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = extraColors.blueColor
@@ -94,6 +147,7 @@ fun AllMeetingScreen(navController: NavController) {
                     color = Color.Gray
                 )
             }
+
         }
 
         if (allMeetingUiState is AllMeetingState.Loading){
@@ -108,15 +162,51 @@ fun AllMeetingScreen(navController: NavController) {
         }
         else if (allMeetingUiState is AllMeetingState.Success) {
             val allMeetingsData = (allMeetingUiState as AllMeetingState.Success).data
-            val allMeetings = when (selectedTab) {
-                0 -> {
-                    listOfNotNull(allMeetingsData.nextOfficialMeeting) + allMeetingsData.invited + allMeetingsData.organized
+            val allMeetings = when(type){
+                MeetingsType.Urgent.ordinal -> {
+                    when (selectedTab) {
+                        0 -> {
+                            allMeetingsData.invited.filter { it.priorityId == 3 } + allMeetingsData.organized.filter { it.priorityId == 3 }
+                        }
+
+                        1 -> {
+                            allMeetingsData.organized.filter { it.priorityId == 3 }
+                        }
+
+                        else -> {
+                            allMeetingsData.invited.filter { it.priorityId == 3 }
+                        }
+                    }
                 }
-                1 -> {
-                    allMeetingsData.organized
+                MeetingsType.Today.ordinal -> {
+                    when (selectedTab) {
+                        0 -> {
+                            allMeetingsData.invited.filter { it.isStartDateTimeToday } + allMeetingsData.organized.filter { it.isStartDateTimeToday }
+                        }
+
+                        1 -> {
+                            allMeetingsData.organized.filter { it.isStartDateTimeToday }
+                        }
+
+                        else -> {
+                            allMeetingsData.invited.filter { it.isStartDateTimeToday }
+                        }
+                    }
                 }
                 else -> {
-                    allMeetingsData.invited
+                    when (selectedTab) {
+                        0 -> {
+                            allMeetingsData.invited + allMeetingsData.organized
+                        }
+
+                        1 -> {
+                            allMeetingsData.organized
+                        }
+
+                        else -> {
+                            allMeetingsData.invited
+                        }
+                    }
                 }
             }
 
@@ -133,25 +223,15 @@ fun AllMeetingScreen(navController: NavController) {
                 }
 
                 // List of meetings
-                itemsIndexed(allMeetings) { index, meeting ->
-                    if (index == 0 && selectedTab == 0){
-                        WeeklyMeetingCard(
-                            mediaUrl = viewModel.getMediaUrl(),
-                            officialMeeting = meeting,
-                            isExpanded = isMeetingExpanded,
-                            onExpandChange = { isMeetingExpanded = it }
-                        )
-                    } else {
-                        MeetingCard(
-                            meeting = meeting,
-                            onMeetingClicked = {
-                                viewModel.selectMeeting(it)
-                                navController.navigate(
-                                    NavRoutes.MeetingDetailRoute.createRoute(it.id.toString())
-                                )
-                            }
-                        )
-                    }
+                items(allMeetings) { meeting ->
+                    MeetingCard(
+                        meeting = meeting,
+                        onMeetingClicked = {
+                            navController.navigate(
+                                NavRoutes.MeetingDetailRoute.createRoute(it.id.toString())
+                            )
+                        }
+                    )
                 }
             }
         }
@@ -395,7 +475,7 @@ fun MeetingCard(meeting: Meeting, onMeetingClicked: (Meeting) -> Unit) {
 fun HomePreview(){
     AppTheme {
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            AllMeetingScreen(navController = rememberNavController())
+            AllMeetingScreen(viewModel = hiltViewModel(), navController = rememberNavController())
         }
     }
 }

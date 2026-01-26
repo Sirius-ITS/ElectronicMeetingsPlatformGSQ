@@ -120,6 +120,18 @@ class AlertPopupManager @Inject constructor(
     // Confirmation Dialogs (Blocking UI, requires user confirmation)
     // ============================================================================
 
+    fun showSuccess(
+        message: String,
+        confirmText: String,
+        onConfirm: () -> Unit
+    ) {
+        dialogManager.showSuccess(
+            message = message,
+            confirmText = confirmText,
+            onConfirm = onConfirm
+        )
+    }
+
     /**
      * Show a confirmation dialog that requires user action
      * This is a DIALOG (blocking) not a toast notification

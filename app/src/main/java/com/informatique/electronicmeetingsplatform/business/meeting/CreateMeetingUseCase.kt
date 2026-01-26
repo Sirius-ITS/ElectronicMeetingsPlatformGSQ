@@ -25,7 +25,6 @@ class CreateMeetingUseCase @Inject constructor(
      * @property attendees List of attendees
      * @property dateFrom start data
      * @property dateTo end date
-     * @property isOffical official meeting
      * @property isPersonal personal meeting
      * @property isRepeated repeated meeting
      * @property location meeting's location

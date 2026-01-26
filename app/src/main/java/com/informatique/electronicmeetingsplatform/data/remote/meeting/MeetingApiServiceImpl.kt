@@ -3,6 +3,8 @@ package com.informatique.electronicmeetingsplatform.data.remote.meeting
 import android.content.Context
 import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.AllMeetingDetailResponse
 import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.AllMeetingResponse
+import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.RespondMeetingRequest
+import com.informatique.electronicmeetingsplatform.data.model.meeting.allMeeting.RespondMeetingResponse
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.AttachmentRequest
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.AttachmentResponse
 import com.informatique.electronicmeetingsplatform.data.model.meeting.attachments.DeleteAttachmentRequest
@@ -55,6 +57,8 @@ class MeetingApiServiceImpl @Inject constructor(
         private const val ALL_MEETINGS_ENDPOINT = "api/meetings/v1/mobile/my-next-meetings"
 
         private const val ALL_MEETING_DETAIL_ENDPOINT = "api/meetings/v1/mobile/special/"
+
+        private const val RESPOND_MEETING_ENDPOINT = "api/meetings/v1/mobile/meetings/"
     }
 
     override suspend fun meetingStatistics(): ApiResponse<MeetingStatisticsResponse> {
@@ -439,5 +443,47 @@ class MeetingApiServiceImpl @Inject constructor(
             }
         }
     }
+
+    override suspend fun meetingRespondStatus(respond: RespondMeetingRequest): ApiResponse<RespondMeetingResponse> {
+        return when (val response = appRepository.onPost(
+            url = RESPOND_MEETING_ENDPOINT.plus("${respond.meetingId}/respond"),
+            body = respond)) {
+            is ApiResponse.Success -> {
+                return try {
+                    ApiResponse.Success(
+                        json.decodeFromJsonElement(
+                            RespondMeetingResponse.serializer(), response.data
+                        )
+                    )
+                } catch (e: SerializationException) {
+                    ApiResponse.Error(
+                        message = "Invalid response format: ${e.message}",
+                        code = -1
+                    )
+                } catch (e: Exception) {
+                    ApiResponse.Error(
+                        message = "UnHandled error: ${e.message}",
+                        code = -1
+                    )
+                }
+            }
+
+            else -> {
+                val errorBody = when (response) {
+                    is ApiResponse.Error -> null
+                    is ApiResponse.NetworkError -> null
+                    else -> null
+                }
+                ApiResponse.Error(
+                    message = errorBody ?: "Respond meeting failed",
+                    code = when (response) {
+                        is ApiResponse.Error -> response.code
+                        else -> -1
+                    }
+                )
+            }
+        }
+    }
+
 }
 
