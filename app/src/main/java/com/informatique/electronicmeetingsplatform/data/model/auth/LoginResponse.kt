@@ -35,7 +35,7 @@ data class Service(
     val name: String,
     val code: String,
     val description: String,
-    val url: String,
+    val url: String? = null,
     val photoPath: String? = null,
     val isActive: Boolean,
     val isPublic: Boolean,

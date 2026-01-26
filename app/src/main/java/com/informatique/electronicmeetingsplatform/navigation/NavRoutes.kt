@@ -8,6 +8,8 @@ sealed class NavRoutes(val route: String) {
     data object HomeRoute : NavRoutes("home")
     data object CalenderRoute : NavRoutes("calender")
     data object MyRequestsRoute : NavRoutes("requests")
+    data object AddRequestRoute : NavRoutes("add-request")
+    data object OfficialTaskRequestRoute : NavRoutes("official-task-request")
     data object PreviousMeetingRoute : NavRoutes("previous-meetings")
     data object ProfileRoute : NavRoutes("profile")
 
