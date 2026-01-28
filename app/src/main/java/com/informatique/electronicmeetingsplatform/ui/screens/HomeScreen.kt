@@ -1,5 +1,6 @@
 package com.informatique.electronicmeetingsplatform.ui.screens
 
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation. background
@@ -65,8 +66,56 @@ fun HomeScreen(navController: NavController) {
     var isMeetingExpanded by remember { mutableStateOf(false) }
     var showTopCards by remember { mutableStateOf(false) }
 
+    // Track the last route we were on to detect external navigation
+    var lastVisitedRoute by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(Unit) {
         showTopCards = true
+    }
+
+    // Bottom bar routes - these are the tabs in bottom navigation
+    val bottomBarRoutes = remember {
+        listOf("home", "calender", "requests", "previous-meetings", "profile")
+    }
+
+    // Listen for navigation changes and refresh when returning from external screens
+    DisposableEffect(navController) {
+        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+            val currentRoute = destination.route ?: ""
+
+            Log.d("HomeScreen", "Navigation: from '$lastVisitedRoute' to '$currentRoute'")
+
+            // If we just arrived at home screen
+            if (currentRoute == "home") {
+                // Check if we came from an external screen (not bottom bar)
+                if (lastVisitedRoute != null) {
+                    val wasInBottomBar = bottomBarRoutes.any {
+                        lastVisitedRoute?.startsWith(it) == true
+                    }
+
+                    Log.d("HomeScreen", "Last route '$lastVisitedRoute' was in bottom bar: $wasInBottomBar")
+
+                    // Refresh only if coming from external screen
+                    if (!wasInBottomBar) {
+                        Log.d("HomeScreen", "Refreshing statistics from external screen")
+                        viewModel.meetingStatistics()
+                    } else {
+                        Log.d("HomeScreen", "Skipping refresh - came from bottom bar")
+                    }
+                } else {
+                    Log.d("HomeScreen", "First time on home screen (lastVisitedRoute is null)")
+                }
+            }
+
+            // Update last visited route
+            lastVisitedRoute = currentRoute
+        }
+
+        navController.addOnDestinationChangedListener(listener)
+
+        onDispose {
+            navController.removeOnDestinationChangedListener(listener)
+        }
     }
 
     Scaffold(
@@ -79,7 +128,11 @@ fun HomeScreen(navController: NavController) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item { TopHeaderSection() }
+            item { TopHeaderSection(
+                userFullName = viewModel.userFullName.collectAsStateWithLifecycle().value,
+                personalPhotoPath = viewModel.personalPhotoPath.collectAsStateWithLifecycle().value,
+                viewModel = viewModel
+            ) }
 
             item {
                 TopStatisticsCardsExpanded(
@@ -160,9 +213,21 @@ fun HomeScreen(navController: NavController) {
 }
 
 @Composable
-fun TopHeaderSection() {
+fun TopHeaderSection(
+    userFullName: String? = null,
+    personalPhotoPath: String? = null,
+    viewModel: HomeViewModel? = null
+) {
 
     val extraColors = LocalExtraColors.current
+
+    // Log the personalPhotoPath value
+    LaunchedEffect(personalPhotoPath) {
+        Log.d("TopHeaderSection", "personalPhotoPath: $personalPhotoPath")
+        if (!personalPhotoPath.isNullOrEmpty() && viewModel != null) {
+            Log.d("TopHeaderSection", "Full image URL: ${viewModel.buildMediaUrl(personalPhotoPath)}")
+        }
+    }
 
     Row(
         modifier = Modifier
@@ -172,13 +237,26 @@ fun TopHeaderSection() {
     ) {
 
         AsyncImage(
-            model = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT8oMvrWLAG0nQ61RG5nARJYWluVy9cH8Yvpw&s",
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(
+                    if (!personalPhotoPath.isNullOrEmpty() && viewModel != null) {
+                        viewModel.buildMediaUrl(personalPhotoPath)
+                    } else {
+                        null // Use placeholder instead
+                    }
+                )
+                .crossfade(true)
+                .diskCachePolicy(CachePolicy.ENABLED)
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .build(),
             contentDescription = "Profile Picture",
             modifier = Modifier
                 .size(50.dp)
                 .clip(CircleShape)
                 .border(2.dp, extraColors.blueColor, CircleShape),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(id = R.drawable.ic_person),
+            error = painterResource(id = R.drawable.ic_person)
         )
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -189,10 +267,10 @@ fun TopHeaderSection() {
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
-                text = "مرحباً، معالي الشيخ محمد",
+                text = if (!userFullName.isNullOrEmpty()) "مرحباً، $userFullName" else "مرحباً",
                 fontFamily = AppFontFamily,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
                 color = extraColors.blueColor
             )
             Text(

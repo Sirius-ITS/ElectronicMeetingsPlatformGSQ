@@ -1,7 +1,6 @@
 package com.informatique.electronicmeetingsplatform.data.repository.auth
 
 import com.informatique.electronicmeetingsplatform.data.model.auth.LoginResponse
-import com.informatique.electronicmeetingsplatform.data.model.profile.Data
 import com.informatique.electronicmeetingsplatform.data.model.profile.ProfileResponse
 import com.informatique.electronicmeetingsplatform.data.model.profile.personImage.PersonImageResponse
 import com.informatique.electronicmeetingsplatform.data.remote.common.ApiResponse
@@ -87,8 +86,10 @@ interface AuthRepository {
      * Save authentication token locally
      * @param token Access token
      * @param refreshToken Refresh token
+     * @param fullName User's full name
+     * @param personalPhotoPath User's personal photo path
      */
-    suspend fun saveAuthToken(token: String, refreshToken: String?)
+    suspend fun saveAuthToken(token: String, refreshToken: String?, fullName: String?, personalPhotoPath: String?)
 
     /**
      * Get saved access token

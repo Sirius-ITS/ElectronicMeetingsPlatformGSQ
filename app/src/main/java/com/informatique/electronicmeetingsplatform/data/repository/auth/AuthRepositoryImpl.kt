@@ -1,12 +1,12 @@
 package com.informatique.electronicmeetingsplatform.data.repository.auth
 
 import android.content.Context
+import android.util.Log
 import com.informatique.electronicmeetingsplatform.data.datastorehelper.TokenManager
 import com.informatique.electronicmeetingsplatform.data.model.auth.LoginRequest
 import com.informatique.electronicmeetingsplatform.data.model.auth.LoginResponse
 import com.informatique.electronicmeetingsplatform.data.model.auth.LogoutRequest
 import com.informatique.electronicmeetingsplatform.data.model.auth.RefreshTokenRequest
-import com.informatique.electronicmeetingsplatform.data.model.profile.Data
 import com.informatique.electronicmeetingsplatform.data.model.profile.ProfileResponse
 import com.informatique.electronicmeetingsplatform.data.model.profile.personImage.PersonImageRequest
 import com.informatique.electronicmeetingsplatform.data.model.profile.personImage.PersonImageResponse
@@ -51,9 +51,12 @@ class AuthRepositoryImpl @Inject constructor(
         // If login successful, save tokens
         when (response) {
             is ApiResponse.Success -> {
+                Log.d("AuthRepository", "Login successful, personalPhotoPath: ${response.data.userPhotoPath}")
                 saveAuthToken(
                     token = response.data.accessToken,
-                    refreshToken = response.data.refreshToken
+                    refreshToken = response.data.refreshToken,
+                    fullName = response.data.fullName,
+                    personalPhotoPath = response.data.userPhotoPath
                 )
             }
             else -> { /* No action needed */ }
@@ -73,7 +76,9 @@ class AuthRepositoryImpl @Inject constructor(
             is ApiResponse.Success -> {
                 saveAuthToken(
                     token = response.data.accessToken,
-                    refreshToken = response.data.refreshToken
+                    refreshToken = response.data.refreshToken,
+                    fullName = response.data.fullName,
+                    personalPhotoPath = response.data.userPhotoPath
                 )
             }
             else -> { /* No action needed */ }
@@ -183,13 +188,15 @@ class AuthRepositoryImpl @Inject constructor(
         emit(response)
     }
 
-    override suspend fun saveAuthToken(token: String, refreshToken: String?) {
+    override suspend fun saveAuthToken(token: String, refreshToken: String?, fullName: String?, personalPhotoPath: String?) {
         TokenManager.saveOAuthTokens(
             context = context,
             accessToken = token,
             refreshToken = refreshToken,
             tokenType = "Bearer",
-            expiresIn = 3600 // 1 hour default, adjust based on your API
+            expiresIn = 3600, // 1 hour default, adjust based on your API
+            fullName = fullName,
+            personalPhotoPath = personalPhotoPath
         )
     }
 

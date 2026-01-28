@@ -21,25 +21,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.informatique.electronicmeetingsplatform.data.model.meeting.statistics.NextOfficialMeeting
-import com.informatique.electronicmeetingsplatform.ui.theme.AppFontFamily
-import com.informatique.electronicmeetingsplatform.ui.theme.AppTheme
-import com.informatique.electronicmeetingsplatform.ui.theme.ExtraColors
 import com.informatique.electronicmeetingsplatform.ui.theme.LocalExtraColors
+import com.informatique.electronicmeetingsplatform.ui.viewModel.MeetingsViewModel
+import com.informatique.electronicmeetingsplatform.navigation.NavRoutes
 import com.kizitonwose.calendar.compose.CalendarState
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
@@ -59,15 +53,63 @@ private val BlueBadge = Color(0xFF3498DB)
 private val LightPurple = Color(0xFFF3E5F5)
 
 @Composable
-fun CalendarScreen(navController: NavController) {
+fun CalendarScreen(
+    navController: NavController,
+    viewModel: MeetingsViewModel? = null
+) {
+    val meetingsViewModel = viewModel ?: hiltViewModel()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     var selectedTab by remember { mutableStateOf(CalendarTab.GREGORIAN) }
     var expandedMeetingId by remember { mutableStateOf<String?>(null) }
     var isMeetingExpanded by remember { mutableStateOf(false) }
     var showCalendar by remember { mutableStateOf(true) }
 
-    val meetings = remember { getMockMeetings() }
+    // Fetch meetings from device calendar based on current month
+    val calendarMeetings = remember(currentMonth) {
+        val startOfMonth = currentMonth.atDay(1)
+        val endOfMonth = currentMonth.atEndOfMonth()
+        meetingsViewModel.getEventsFromDeviceCalendar(startOfMonth, endOfMonth)
+    }
+
+    // Convert API Meeting to Calendar Screen Meeting
+    val meetings = remember(calendarMeetings) {
+        calendarMeetings.map { apiMeeting ->
+            val eventDate = try {
+                java.time.LocalDateTime.parse(apiMeeting.startDateTime).toLocalDate()
+            } catch (_: Exception) {
+                LocalDate.now()
+            }
+
+            // Ensure unique string id for LazyColumn keys: prefer server id if available
+            val baseId = apiMeeting.id
+            val uniqueId = if (baseId > 0) {
+                // server-linked meeting
+                baseId.toString()
+            } else {
+                // unlinked calendar event: combine calendar id and start time hash to make a stable unique key
+                "cal_${baseId}_${apiMeeting.startDateTime.hashCode()}"
+            }
+
+            Meeting(
+                id = uniqueId,
+                title = apiMeeting.topic,
+                date = eventDate,
+                time = "${apiMeeting.startTime} - ${apiMeeting.endTime}",
+                location = apiMeeting.location,
+                description = apiMeeting.notes,
+                priority = apiMeeting.priorityName,
+                isOrganizer = apiMeeting.isOrganizer ?: false,
+                attendanceStatus = mapOf(
+                    AttendanceStatus.CONFIRMED to apiMeeting.acceptedCount,
+                    AttendanceStatus.DECLINED to apiMeeting.refusedCount
+                ),
+                attendees = apiMeeting.attendees.mapNotNull { it.fullName }
+            )
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -114,14 +156,16 @@ fun CalendarScreen(navController: NavController) {
                                 GregorianCalendarWidget(
                                     selectedDate = selectedDate,
                                     onDateSelected = { selectedDate = it },
-                                    meetings = meetings
+                                    meetings = meetings,
+                                    onMonthChanged = { newMonth -> currentMonth = newMonth }
                                 )
                             }
                             CalendarTab.HIJRI -> {
                                 HijriCalendarWidget(
                                     selectedDate = selectedDate,
                                     onDateSelected = { selectedDate = it },
-                                    meetings = meetings
+                                    meetings = meetings,
+                                    onMonthChanged = { newMonth -> currentMonth = newMonth }
                                 )
                             }
                         }
@@ -149,7 +193,6 @@ fun CalendarScreen(navController: NavController) {
 
 //                        item {
 //                            WeeklyMeetingCard(
-//
 //                                isExpanded = isMeetingExpanded,
 //                                onExpandChange = { isMeetingExpanded = it }
 //                            )
@@ -164,6 +207,19 @@ fun CalendarScreen(navController: NavController) {
                                 isExpanded = expandedMeetingId == meeting.id,
                                 onExpandToggle = {
                                     expandedMeetingId = if (expandedMeetingId == meeting.id) null else meeting.id
+                                },
+                                onMeetingClick = { meetingId ->
+                                    // Navigate only for server-linked meetings (numeric positive id)
+                                    val numericId = meetingId.toIntOrNull()
+                                    if (numericId != null && numericId > 0) {
+                                        navController.navigate(NavRoutes.MeetingDetailRoute.createRoute(meetingId))
+                                    } else {
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            "هذا الاجتماع مضاف من تقويم خارجي ولا توجد تفاصيل مرتبطة.",
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
                                 }
                             )
                         }
@@ -187,6 +243,18 @@ fun CalendarScreen(navController: NavController) {
                                 isExpanded = expandedMeetingId == meeting.id,
                                 onExpandToggle = {
                                     expandedMeetingId = if (expandedMeetingId == meeting.id) null else meeting.id
+                                },
+                                onMeetingClick = { meetingId ->
+                                    val numericId = meetingId.toIntOrNull()
+                                    if (numericId != null && numericId > 0) {
+                                        navController.navigate(NavRoutes.MeetingDetailRoute.createRoute(meetingId))
+                                    } else {
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            "هذا الاجتماع مضاف من تقويم خارجي ولا توجد تفاصيل مرتبطة.",
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
                                 }
                             )
                         }
@@ -328,7 +396,8 @@ fun TabButton(
 fun GregorianCalendarWidget(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
-    meetings: List<Meeting>
+    meetings: List<Meeting>,
+    onMonthChanged: (YearMonth) -> Unit = {}
 ) {
     val currentMonth = remember { YearMonth.now() }
     val startMonth = remember { currentMonth.minusMonths(100) }
@@ -344,6 +413,11 @@ fun GregorianCalendarWidget(
 
     val coroutineScope = rememberCoroutineScope()
     val visibleMonth = rememberFirstCompletelyVisibleMonth(state)
+
+    // Notify parent when month changes
+    LaunchedEffect(visibleMonth.yearMonth) {
+        onMonthChanged(visibleMonth.yearMonth)
+    }
 
     Surface(
         modifier = Modifier. fillMaxWidth(),
@@ -412,7 +486,8 @@ fun GregorianCalendarWidget(
 fun HijriCalendarWidget(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
-    meetings: List<Meeting>
+    meetings: List<Meeting>,
+    onMonthChanged: (YearMonth) -> Unit = {}
 ) {
     // For Hijri calendar, we'll still use the Gregorian dates internally
     // but display Hijri dates using UmmalquraCalendar
@@ -430,6 +505,11 @@ fun HijriCalendarWidget(
 
     val coroutineScope = rememberCoroutineScope()
     val visibleMonth = rememberFirstCompletelyVisibleMonth(state)
+
+    // Notify parent when month changes
+    LaunchedEffect(visibleMonth.yearMonth) {
+        onMonthChanged(visibleMonth.yearMonth)
+    }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -803,7 +883,8 @@ fun MeetingItem(
     modifier: Modifier = Modifier,
     meeting: Meeting,
     isExpanded: Boolean = false,
-    onExpandToggle: () -> Unit = {}
+    onExpandToggle: () -> Unit = {},
+    onMeetingClick: (String) -> Unit = {}
 ) {
 
     val extraColors = LocalExtraColors.current
@@ -813,6 +894,13 @@ fun MeetingItem(
         animationSpec = tween(300)
     )
 
+    // Determine color based on priority
+    val priorityColor = when (meeting.priority.lowercase()) {
+        "عالية", "ضرورية", "عاجلة", "urgent", "high" -> extraColors.maroonColor
+        "متوسطة", "medium", "normal" -> extraColors.blueColor
+        else -> extraColors.textGray
+    }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -821,7 +909,8 @@ fun MeetingItem(
                     dampingRatio = Spring.DampingRatioMediumBouncy,
                     stiffness = Spring.StiffnessLow
                 )
-            ),
+            )
+            .clickable { onMeetingClick(meeting.id) },
         shape = RoundedCornerShape(20.dp),
         color = CardBackground,
         shadowElevation = 3.dp,
@@ -837,11 +926,7 @@ fun MeetingItem(
                     .fillMaxHeight()
                     .width(10.dp)
                     .background(
-                        color = when (meeting.priority) {
-                            "عالية" -> extraColors.maroonColor
-                            "متوسطة" -> extraColors.blueColor
-                            else -> extraColors.textGray
-                        },
+                        color = priorityColor,
                         shape = RoundedCornerShape(topEnd = 20.dp, bottomEnd = 20.dp)
                     )
             )
@@ -897,11 +982,7 @@ fun MeetingItem(
                     // Priority Badge
                     PriorityBadge(
                         text = meeting.priority,
-                        textColor = when (meeting.priority) {
-                            "عالية" -> extraColors.maroonColor
-                            "متوسطة" -> extraColors.blueColor
-                            else -> extraColors.textGray
-                        }
+                        textColor = priorityColor
                     )
 
                     // Attendance Badges (reversed order for RTL)
@@ -1569,12 +1650,13 @@ fun getMockMeetings(): List<Meeting> {
     )
 }
 
-@Preview(showBackground = true)
-@Composable
-fun CalenderPreview(){
-    AppTheme {
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-            CalendarScreen(navController = rememberNavController())
-        }
-    }
-}
+// Preview function commented out due to missing dependencies
+// @Preview(showBackground = true)
+// @Composable
+// fun CalenderPreview(){
+//     AppTheme {
+//         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+//             CalendarScreen(navController = rememberNavController())
+//         }
+//     }
+// }

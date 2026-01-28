@@ -131,6 +131,67 @@ fun ProfileScreen(navController: NavController) {
             }
         }
     }
+    else if (profileState is ProfileState.Error) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(LightGray),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = extraColors.maroonColor,
+                    modifier = Modifier.size(64.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "حدث خطأ",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = (profileState as ProfileState.Error).message,
+                    fontSize = 14.sp,
+                    color = extraColors.textGray,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(
+                    onClick = { viewModel.profile() },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = extraColors.maroonColor
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("إعادة المحاولة")
+                }
+            }
+        }
+    }
+    else {
+        // Idle state
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(LightGray),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = extraColors.maroonColor)
+        }
+    }
 
 }
 
@@ -434,11 +495,11 @@ fun JobCardFront(
                             color = Color.White.copy(alpha = 0.2f)
                         )
 
-                        InfoRow("هاتف:", data.person.phoneNumber, Icons.Default.Phone)
+                        InfoRow("هاتف:", data.person.phoneNumber.orEmpty(), Icons.Default.Phone)
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        InfoRow("البريد:", data.person.email, Icons.Default.Mail)
+                        InfoRow("البريد:", data.person.email.orEmpty(), Icons.Default.Mail)
                     }
                 }
             }
@@ -465,7 +526,7 @@ fun JobCardFront(
                 textAlign = TextAlign.Center
             )
             Text(
-                text = data.person.jobTitle,
+                text = data.person.jobTitle.orEmpty(),
                 color = Color.White.copy(alpha = 0.8f),
                 fontSize = 11.sp,
                 modifier = Modifier.fillMaxWidth(),

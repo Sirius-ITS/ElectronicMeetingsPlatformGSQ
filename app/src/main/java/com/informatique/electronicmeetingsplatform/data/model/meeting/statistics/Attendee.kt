@@ -9,7 +9,7 @@ data class Attendee(
     val fullName: String,
     val isOrganizer: Boolean,
     val jobName: String,
-    val personId: Int,
+    val personId: Int? = null,
     val personalPhotoPath: String? = null,
     val qid: String? = null,
     val refuseReason: String? = null,

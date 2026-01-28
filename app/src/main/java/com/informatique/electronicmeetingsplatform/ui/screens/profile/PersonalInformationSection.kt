@@ -86,10 +86,10 @@ fun PersonalInformation(data: Data) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        InfoField("الاسم الأول بالإنجليزية", data.person.englishFirstName)
-        InfoField("الاسم الثاني بالإنجليزية", data.person.englishSecondName)
-        InfoField("اللغة الأم", data.person.motherTongue)
-        InfoField("الجنسية", data.person.nationality)
+        InfoField("الاسم الأول بالإنجليزية", data.person.englishFirstName.orEmpty())
+        InfoField("الاسم الثاني بالإنجليزية", data.person.englishSecondName.orEmpty())
+        InfoField("اللغة الأم", data.person.motherTongue.orEmpty())
+        InfoField("الجنسية", data.person.nationality.orEmpty())
         InfoField("الحالة الإجتماعية", data.person.maritalStatusName ?: "غير محدد")
         InfoField("تاريخ الميلاد", data.person.formattedDateOfBirth)
         InfoField("الجنس", data.person.gender ?: "غير محدد")
@@ -188,7 +188,7 @@ fun AddressesSection(data: Data) {
                     AddressDetailItem(
                         icon = Icons.Default.Menu,
                         label = "شارع",
-                        value = data.person.streetAddress
+                        value = data.person.streetAddress.orEmpty()
                     )
 
                     HorizontalDivider(

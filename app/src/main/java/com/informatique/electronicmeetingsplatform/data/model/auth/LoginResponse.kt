@@ -27,6 +27,31 @@ data class LoginResponse(
     val sipUserPassword: String? = null,
     val mdmMobileNumber: String? = null,
     val isDepartmentManager: Boolean,
+    val personalPhotoPath: String? = null,
+    val personDepartmentJobs: List<PersonDepartmentJob> = emptyList()
+) {
+    // Helper property to get personalPhotoPath from first active job
+    val userPhotoPath: String?
+        get() = personDepartmentJobs.firstOrNull()?.personalPhotoPath
+}
+
+@Serializable
+data class PersonDepartmentJob(
+    val id: Int,
+    val personId: Int,
+    val personName: String,
+    val departmentJobId: Int,
+    val departmentId: Int,
+    val departmentName: String,
+    val jobId: Int,
+    val jobTitle: String,
+    val startDate: String,
+    val endDate: String? = null,
+    val isActive: Boolean,
+    val sectorId: Int? = null,
+    val sectorName: String? = null,
+    val personalPhotoPath: String? = null,
+    val createdAt: String
 )
 
 @Serializable

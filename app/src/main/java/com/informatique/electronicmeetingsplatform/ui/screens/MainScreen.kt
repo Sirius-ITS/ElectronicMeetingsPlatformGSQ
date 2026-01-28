@@ -159,7 +159,6 @@ fun NestedNavHost(
                 navController = nestedNavController,
                 onNavigateToAddRequest = onNavigateToAddRequest
             )
-            MyRequestScreen(navController = navController)
         }
 
         composable(NavRoutes.PreviousMeetingRoute.route) {

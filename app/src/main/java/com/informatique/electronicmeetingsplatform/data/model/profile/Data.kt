@@ -15,7 +15,7 @@ data class Data(
     val qualifications: List<Qualification>,
     val reportsToPersonFullName: String? = null,
     val reportsToPersonId: Int? = null,
-    val reportsToUserId: Int? = null,
+    val reportsToUserId: String? = null,
     val roles: List<String>,
     val sectorId: Int? = null,
     val sectorName: String,

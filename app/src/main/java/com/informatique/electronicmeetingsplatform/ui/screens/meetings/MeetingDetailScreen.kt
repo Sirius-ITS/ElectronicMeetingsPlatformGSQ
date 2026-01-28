@@ -71,8 +71,13 @@ fun MeetingDetailScreen(viewModel: MeetingsViewModel, navController: NavControll
     }
 
     LaunchedEffect(meetingId) {
-        if (!meetingId.isEmpty())
-            viewModel.getMeetingById(meetingId = meetingId.toInt())
+        if (!meetingId.isEmpty()) {
+            // Only load meeting details for valid numeric server IDs
+            val numericId = meetingId.toIntOrNull()
+            if (numericId != null && numericId > 0) {
+                viewModel.getMeetingById(meetingId = numericId)
+            }
+        }
     }
 
     Scaffold { paddingValues ->
@@ -176,13 +181,12 @@ fun MeetingDetailScreen(viewModel: MeetingsViewModel, navController: NavControll
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // Add to calender btn
-                    // show it if the user is not organizer and the status is accepted
-                    if (detail.isOrganizer == false && detail.myStatus == "Accepted") {
+                    // show it if the user is organizer OR if the user is not organizer and the status is accepted
+                    if (detail.isOrganizer == true || (detail.isOrganizer == false && detail.myStatus == "Accepted")) {
                         Button(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(56.dp)
-                                .padding(16.dp),
+                                .height(56.dp),
                             onClick = {
                                 val hasReadPermission = ContextCompat.checkSelfPermission(
                                     context, Manifest.permission.READ_CALENDAR
@@ -223,12 +227,14 @@ fun MeetingDetailScreen(viewModel: MeetingsViewModel, navController: NavControll
                     if (detail.isOrganizer == false && detail.myStatus == "Pending") {
                         Button(
                             onClick = {
-                                viewModel.respondMeeting(
-                                    meetingId = meetingId.toInt(),
-                                    response = "accept",
-                                    reasonId = 0,
-                                    otherReason = ""
-                                )
+                                meetingId.toIntOrNull()?.let { id ->
+                                    viewModel.respondMeeting(
+                                        meetingId = id,
+                                        response = "accept",
+                                        reasonId = 0,
+                                        otherReason = ""
+                                    )
+                                }
                             },
                             modifier = Modifier
                                 .weight(1f)
@@ -262,12 +268,14 @@ fun MeetingDetailScreen(viewModel: MeetingsViewModel, navController: NavControll
                     if (detail.isOrganizer == false && detail.myStatus == "Pending") {
                         Button(
                             onClick = {
-                                viewModel.respondMeeting(
-                                    meetingId = meetingId.toInt(),
-                                    response = "apology",
-                                    reasonId = 0,
-                                    otherReason = ""
-                                )
+                                meetingId.toIntOrNull()?.let { id ->
+                                    viewModel.respondMeeting(
+                                        meetingId = id,
+                                        response = "apology",
+                                        reasonId = 0,
+                                        otherReason = ""
+                                    )
+                                }
                             },
                             modifier = Modifier
                                 .weight(1f)

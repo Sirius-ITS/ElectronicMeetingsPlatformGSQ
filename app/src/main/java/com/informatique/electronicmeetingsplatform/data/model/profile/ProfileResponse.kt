@@ -8,5 +8,5 @@ data class ProfileResponse(
     val message: String,
     val data: Data,
     val errors: Map<String, String>? = null,
-    val statusCode: Int
+    val statusCode: Int? = null
 )

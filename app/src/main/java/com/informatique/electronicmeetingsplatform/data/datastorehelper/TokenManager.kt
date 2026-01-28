@@ -20,6 +20,8 @@ object TokenManager {
     private val TOKEN_TYPE_KEY = stringPreferencesKey("token_type")
     private val EXPIRES_IN_KEY = longPreferencesKey("expires_in")
     private val TOKEN_TIMESTAMP_KEY = longPreferencesKey("token_timestamp")
+    private val FULL_NAME_KEY = stringPreferencesKey("full_name")
+    private val PERSONAL_PHOTO_PATH_KEY = stringPreferencesKey("personal_photo_path")
 
     // Legacy token methods (kept for backward compatibility)
     suspend fun saveToken(context: Context, token: String) {
@@ -40,14 +42,19 @@ object TokenManager {
         accessToken: String,
         refreshToken: String? = null,
         tokenType: String = "Bearer",
-        expiresIn: Long? = null
+        expiresIn: Long? = null,
+        fullName: String? = null,
+        personalPhotoPath: String? = null
     ) {
+        Log.d("TokenManager", "Saving personalPhotoPath: $personalPhotoPath")
         context.dataStore.edit { prefs ->
             prefs[ACCESS_TOKEN_KEY] = accessToken
             refreshToken?.let { prefs[REFRESH_TOKEN_KEY] = it }
             prefs[TOKEN_TYPE_KEY] = tokenType
             expiresIn?.let { prefs[EXPIRES_IN_KEY] = it }
             prefs[TOKEN_TIMESTAMP_KEY] = System.currentTimeMillis()
+            fullName?.let { prefs[FULL_NAME_KEY] = it }
+            personalPhotoPath?.let { prefs[PERSONAL_PHOTO_PATH_KEY] = it }
         }
     }
 
@@ -66,6 +73,18 @@ object TokenManager {
     suspend fun getTokenType(context: Context): String? {
         return context.dataStore.data
             .map { prefs -> prefs[TOKEN_TYPE_KEY] }
+            .first()
+    }
+
+    suspend fun getFullName(context: Context): String? {
+        return context.dataStore.data
+            .map { prefs -> prefs[FULL_NAME_KEY] }
+            .first()
+    }
+
+    suspend fun getPersonalPhotoPath(context: Context): String? {
+        return context.dataStore.data
+            .map { prefs -> prefs[PERSONAL_PHOTO_PATH_KEY] }
             .first()
     }
 
@@ -98,6 +117,8 @@ object TokenManager {
             preferences.remove(TOKEN_TYPE_KEY)
             preferences.remove(EXPIRES_IN_KEY)
             preferences.remove(TOKEN_TIMESTAMP_KEY)
+            preferences.remove(FULL_NAME_KEY)
+            preferences.remove(PERSONAL_PHOTO_PATH_KEY)
             preferences.clear() // Clear everything to be sure
         }
 
